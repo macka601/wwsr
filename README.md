@@ -21,10 +21,13 @@ Unpack the files to a directory of your choice, then run the make file.
 The device might get claimed by the kernel, add the following udev rule so that we can access it without being root. 
 Add in /etc/udev/rules.d/<rule_name>
 
-# WH-1081 Weather Station
-#ACTION!="add|change", GOTO="weather_station_end"
-SUBSYSTEM=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
+```bash
 
-LABEL="weather_station_end"
+# WH-1081 Weather Station
+#ACTION!="add|change", GOTO="weather_station_end" SUBSYSTEM=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
+
+LABEL="weather_station_end
+
+```
 
 After doing that, you should be able to do ./wwsr -h and be presented with the help screen
