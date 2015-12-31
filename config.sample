@@ -1,0 +1,10 @@
+#configuration file, all values must end with a ;
+host=;
+port=5432;
+dbname=;
+table=;
+dbuser=;
+password=;
+wgUserName=;
+wgPassword=;
+wgId=;
