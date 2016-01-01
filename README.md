@@ -13,6 +13,7 @@ The program requires the a WS1080 or WS1081 weather station and the additional p
 * libusb-dev
 * libpq-dev
 * libcurl4-gnutls-dev 
+
 do apt-get install libusb-dev libpq-dev libcurl4-gnutls-dev to get these
 
 ## Installing the program
