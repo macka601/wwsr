@@ -9,10 +9,11 @@ that i think could be done better, even when i did them i still think that. So i
 Jim Easterbrook also has some excellent information about the storage of the device at http://www.jim-easterbrook.me.uk/weather/ew/
 
 ## Requirements
-The program requires a 
-* WS1080 weather station
-* libusb
-* pgsql
+The program requires the a WS1080 or WS1081 weather station and the additional packages
+* libusb-dev
+* libpq-dev
+* libcurl4-gnutls-dev 
+do apt-get install libusb-dev libpq-dev libcurl4-gnutls-dev to get these
 
 ## Installing the program
 Unpack the files to a directory of your choice, then run the make file.
