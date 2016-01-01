@@ -26,9 +26,9 @@ Add in /etc/udev/rules.d/<rule_name>
 ```bash
 
 # WH-1081 Weather Station
-#ACTION!="add|change", GOTO="weather_station_end" SUBSYSTEM=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 
-LABEL="weather_station_end
+LABEL="weather_station_end"
 
 ```
 
