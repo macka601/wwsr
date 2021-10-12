@@ -3,6 +3,13 @@
 
 /* Wunderground functions */
 
+typedef struct wunderground_config {
+	char *wgUserName;
+	char *wgPassword;
+	char *wgId;
+} wunderground_config_t;
+
+
 #define URL_SIZE 512
 #define URL_FORMAT "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?\
 ID=%s\
@@ -23,6 +30,6 @@ int createAndSendToWunderGround(struct weather* w, int printToScreen);
 void stripWhiteSpace(char *string);
 size_t static write_callback_func(void *buffer, size_t size, size_t nmemb, void *userp);
 
-extern int logType;
+int wunderground_init (FILE *config_file, wunderground_config_t *dbase_config);
 
 #endif /* end of header guard */

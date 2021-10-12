@@ -1,34 +1,25 @@
 /* 
   Re-write of the wwsr program 
   Grant McEwan  
-  Version 0.08
-  
+  Version 0.10
 */
 // Version number, used by the help output
-#define VERSION "0.09"
-// V0.09
-// Fixed a small issue with sending the password to the database and displaying *** on screen
-// V0.08
-// Improving on logging
-// V0.07
-// Fixed the bug where temperature over 25 deg would not be reported properly
-// V0.06
-// Splitting files up for another re-write	
-// V0.05
-// Fixed bug where temperature is out of range
-// V0.04
-// Added support for wunderground weather
+
+// V0.10
+// Refactoring code more
 
 // Include standard libraries
 #include <stdio.h>
-#include <stdarg.h>
+// #include <stdarg.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 // Include all user defined libraries
 #include "common.h"
+#include "config.h"
 #include "wwsr.h"
 #include "usbFunctions.h"
 #include "logger.h"
@@ -57,6 +48,7 @@ int main( int argc, char **argv )
 {  
 	// variable that holds the options
 	int option;  
+	config_t config;
 
 	bool printToScreen = 0;
 	bool sendToWunderGround = 0;
@@ -64,6 +56,7 @@ int main( int argc, char **argv )
 	log_sort.usb = 0;
 	log_sort.all = 0;
 	log_sort.database = 0;
+	int ret;
 
 	// Global switch between imperial and metric measurements
 	g_AsImperial = 0;
@@ -71,93 +64,24 @@ int main( int argc, char **argv )
 	// redirecting the logging output 
 	_log_error=stderr;
 
-	// go into a while loop looking for options from the user
-	while( ( option = getopt (argc, argv, "daupvxhwi?") ) != -1 )
+	ret = config_get_options (argc, argv, &config);
+
+	if (ret == NO_OPTIONS_SELECTED)
 	{
-		// Change the ? to an h
-		if (option == '?')
-		{
-			option = 'h';
-		}
-
-		switch( option )
-		{   
-			// Turn on database debugging
-			case 'd':
-				//redirecting the log output of _log_debug to the standard output				
-				logType = LOG_DEBUG;
-				log_sort.database = 1;
-				// inform user that we are redirecting output
-				logger(LOG_INFO, logType, "Main", "database debugging Enabled", NULL);		
-			break;
-
-			// Prints values, but doesn't put them to database
-			case 'p':
-				printf("Showing the current values from the weather station\n");
-				printToScreen = 1;
-			break;
-
-			// All debug information on
-			case 'a':
-				logType = LOG_DEBUG;
-				log_sort.all = 1;
-				logger(LOG_DEBUG, logType, "Main", "debug flag ON", NULL);	     
-			break;
-
-			case 'x':
-				logType = LOG_DEBUG;
-				g_show_debug_bytes = 1;
-				logger(LOG_DEBUG, logType, "Main", "g_debug_bytes flag ON", NULL);	 
-			break;
-			case 'w':
-				sendToWunderGround = 1;		
-			break;
+		exit(1);
+	}
 	
-			// Show as imperial
-			case 'i':
-				g_AsImperial = 1;		
-			break;	   
+	if(config.log_type.all || config.log_type.usb)
+	{
+		logger(LOG_DEBUG, logType, "Main", "Attempting to Opening the USB", NULL );
+	}
 
-			// g_debug information on
-			case 'u':
-				logType = LOG_USB;
-				log_sort.usb = 1;
-				logger(LOG_DEBUG, logType, "Main", "USB debug flag ON", NULL);	     
-				break;
-
-			// Print the options to the user
-			case 'h':
-				printf("Wireless Weather Station Reader\n");
-				printf("Version: \t%s\t\n", VERSION );
-				printf("Author:\t\tGrant McEwan\n\n" );
-				printf("options are\n" );
-				printf("-? -h\t\tDisplay this help\n" );
-				printf("-x\t\tShow debug bytes\n" );		
-				printf("-u\t\tShow usb debug information\n" );	
-				printf("-d\t\tShow database debug information\n" );					
-				printf("-a\t\tShow all debug Information\n");  
-				printf("-p\t\tPrint values to screen only\n");
-				printf("-w\t\tSend Values to WunderGround (see config file)\n");
-				printf("-i\t\tShow values in imperial units\n");
-				return 1;
-
-			//set the default to abort
-			default:
-				abort();
-		}	 
-	} 
-
-	if(log_sort.all || log_sort.database) logger( LOG_DEBUG, logType, "Main", "Opening the configuration file", NULL );
-
-	openConfigFile();
-	
-
-	if(log_sort.usb) logger( LOG_DEBUG, logType, "Main", "Attempting to Opening the USB", NULL );
+	exit(1);
 
 	usbStatus = usbOpen( &DeviceHandle, VENDOR_ID, PRODUCT_ID );
 
 	// if the usbStatus is 0 - it returned opened
-	if( usbStatus == 0 )
+	if (usbStatus == 0)
 	{
 		if(log_sort.usb == 1)
 		{
@@ -289,7 +213,7 @@ int main( int argc, char **argv )
 		if(i == 0)
 		{
 			if(log_sort.all) logger(LOG_DEBUG, logType, "Main", "Error processing data!", NULL);
-			return;
+			return -1;
 		}
 
 		weather.bytePtr = weather.readBytes;
@@ -303,7 +227,7 @@ int main( int argc, char **argv )
 			weather.bytePtr += sprintf(weather.bytePtr, "%02X", _CurrentBuffer[i]);
 		}
 
-		weather.bytePtr += sprintf(weather.bytePtr, '\0');	   
+		// weather.bytePtr += sprintf(weather.bytePtr, '\0');	   
 
 		// This shows all the buffer information
 		// Only comes on when the g_debug option (d) is set or when to show bytes (x))
@@ -550,20 +474,5 @@ int hex2dec(int hexByte)
     }
     
     return decimalValue;
-}
-
-/* Remove trailing whitespaces */
-char *rtrim(char *const s)
-{
-        if(s && *s) {
-                char *cur = s + strlen(s) - 1;
- 
-                while(cur != s && isspace(*cur))
-                        --cur;
- 
-                cur[isspace(*cur) ? 0 : 1] = '\0';
-        }
- 
-        return s;
 }
 

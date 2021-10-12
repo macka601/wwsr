@@ -1,11 +1,48 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define VERSION "0.10"
+
+#include <stdbool.h>
+#include <string.h>
+
+#include "database.h"
+#include "wunderground.h"
 /*
  * 
  * Common variables used across the weather program
  */
+
+#define RETURN_IF_ERROR(f) do { \
+  int retval = (f); \
+  if (retval < 0) { \
+    return -1;      \
+  }                 \
+} while (0)         \
+
 struct weather weather;
+
+#define NO_OPTIONS_SELECTED -1
+
+typedef struct log_type
+{
+	bool usb;
+	bool bytes;
+	bool database;
+	bool all;
+} log_type_t;
+
+/* Configuration options */
+typedef struct config {
+	bool print_to_screen;
+	bool send_to_wunderground;
+	bool show_debug_bytes; /* TODO: this probably should be a log level? */
+	bool show_as_imperial;
+	int log_level;
+	log_type_t log_type;
+	dbase_config_t dbase_config;
+	wunderground_config_t wunderground_config;
+} config_t;
 
 struct weather {
 	char last_read[3];

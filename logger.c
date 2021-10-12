@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "logger.h"
 
-void logger(log_event event, int logType, char *function, char *msg,...)
+void logger(log_event event, log_event logType, const char *function, char *msg,...)
 {	
 	va_list args;
 	
@@ -41,7 +41,7 @@ void logger(log_event event, int logType, char *function, char *msg,...)
 		break;
 		
 		case LOG_ERROR:
-			if (logType == LOG_ERROR)
+			if (logType == LOG_ERROR || logType == LOG_DEBUG)
 			{
 				fprintf(stdout, "error: wwsr.%s - ",function);
 				vfprintf(stdout, msg, args);
@@ -50,13 +50,14 @@ void logger(log_event event, int logType, char *function, char *msg,...)
 		break;
 		
 		case LOG_INFO:
-			if (logType == LOG_INFO)
+			if (logType == LOG_INFO || logType == LOG_DEBUG)
 			{
 				fprintf(stdout, "info: wwsr.%s - ",function);
 				vfprintf(stdout, msg, args);
 				fprintf(stdout, "\n");
 			}
 		break;
+
 	}
 	
 	va_end(args);
