@@ -8,9 +8,7 @@
   
 */
 #include <stdint.h>
-// If you have a different usb device, change the codes here
-#define VENDOR_ID    0x1941
-#define PRODUCT_ID   0x8021
+
 #define USB_OPEN	1
 #define USB_CLOSED	0
 #define BUF_SIZE 0x10

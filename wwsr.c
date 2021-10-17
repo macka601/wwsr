@@ -21,7 +21,7 @@
 #include "common.h"
 #include "config.h"
 #include "wwsr.h"
-#include "usbFunctions.h"
+#include "wwsr_usb.h"
 #include "logger.h"
 #include "weatherProcessing.h"
 #include "database.h"
@@ -34,10 +34,6 @@
 // SUBSYSTEM=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 
 // LABEL="weather_station_end"
-
-// Global declerations
-// -----
-usb_dev_handle *DeviceHandle;
 
 // usbStatus = 1 for open, 0 for closed
 int usbStatus;
@@ -57,6 +53,7 @@ int main( int argc, char **argv )
 	log_sort.all = 0;
 	log_sort.database = 0;
 	int ret;
+	log_event log_level;
 
 	// Global switch between imperial and metric measurements
 	g_AsImperial = 0;
@@ -70,25 +67,18 @@ int main( int argc, char **argv )
 	{
 		exit(1);
 	}
-	
-	if(config.log_type.all || config.log_type.usb)
-	{
-		logger(LOG_DEBUG, logType, "Main", "Attempting to Opening the USB", NULL );
-	}
 
-	exit(1);
+	log_level = config_get_log_level ();
 
-	usbStatus = usbOpen( &DeviceHandle, VENDOR_ID, PRODUCT_ID );
+	logger (LOG_DEBUG, logType, "Main", "Attempting to Opening the USB", NULL );
+
+	usbStatus = wwsr_usb_open ();
 
 	// if the usbStatus is 0 - it returned opened
 	if (usbStatus == 0)
 	{
-		if(log_sort.usb == 1)
-		{
-			logger( LOG_DEBUG, logType, "Main", "Usb opened successfully", NULL );
-			logger( LOG_DEBUG, logType, "Main", "Retrieving data", NULL );
-		}
-		
+		logger ( LOG_USB, log_level, __func__, "Usb opened successfully, retrieving data", NULL );
+
 		// initialise address positions
 		// current address in device, new address and new address -1h and - 24h (for rainfall computation)
 		uint16_t pMemoryAddress, pFirstRecord, pCurrentRecord, p1HrRecord, p24HrRecord, pStoredReadings; 	   
@@ -116,35 +106,35 @@ int main( int argc, char **argv )
 
 		// The current address being written to is held at WS_CURRENT_ENTRY
 		// get the current memory address being written to in the device
-		usbStatus = usbRead(DeviceHandle, WS_CURRENT_ENTRY, (unsigned char *)&pMemoryAddress, sizeof(pMemoryAddress));
+		usbStatus = wwsr_usb_read (WS_CURRENT_ENTRY, (unsigned char *)&pMemoryAddress, sizeof(pMemoryAddress));
 
-		usbStatus = usbRead(DeviceHandle, WS_STORED_READINGS, (unsigned char *)&pStoredReadings, sizeof(pStoredReadings)); 
+		usbStatus = wwsr_usb_read (WS_STORED_READINGS, (unsigned char *)&pStoredReadings, sizeof(pStoredReadings)); 
 
 		// Get the current time from the device
-		if(log_sort.all) logger( LOG_DEBUG, logType, "Main", "Getting Weather Stations Time", NULL);
+		if(log_sort.all) logger (LOG_DEBUG, logType, "Main", "Getting Weather Stations Time", NULL);
 
-		usbStatus = usbRead(DeviceHandle, WS_TIME_DATE, _TimeAndDate, sizeof(_TimeAndDate));
+		usbStatus = wwsr_usb_read (WS_TIME_DATE, _TimeAndDate, sizeof(_TimeAndDate));
 
 		char _buff[BUFSIZ];
 
 		sprintf(_buff, "Weather Station's Time: %02X:%02X ", _TimeAndDate[HOURS], \
 		_TimeAndDate[MINUTES]);
 
-		if(log_sort.all) logger( LOG_DEBUG, logType, "Main", _buff, NULL);
+		if(log_sort.all) logger (LOG_DEBUG, logType, "Main", _buff, NULL);
 
 		// divide the current time stamp by the amount of 5 min intervals that could have occurred 
 		int timeDifference = hex2dec(_TimeAndDate[4])/5;	  	 	  	    
 
 		sprintf(_buff, "Number of 5 min periods so far this hour = %d", timeDifference);
 
-		if(log_sort.all) logger(LOG_DEBUG, logType, "Main", _buff, NULL);
+		if(log_sort.all) logger (LOG_DEBUG, logType, "Main", _buff, NULL);
 
 		sprintf(_buff, "1hr pointer will be 0x%04X", pMemoryAddress - ((timeDifference + 5) * 16));
 
-		if(log_sort.all) logger(LOG_DEBUG, logType, "Main", _buff, NULL);
+		if(log_sort.all) logger (LOG_DEBUG, logType, "Main", _buff, NULL);
 
 		// current address 
-		pCurrentRecord = pMemoryAddress;         	   	    
+		pCurrentRecord = pMemoryAddress;    
 
 		// 1 Hr pointer address 
 		// (60mins / 5min records) * 16 bytes of data
@@ -180,22 +170,22 @@ int main( int argc, char **argv )
 		//read current position
 		if (usbStatus == 0)
 		{
-			usbStatus = usbRead(DeviceHandle, pCurrentRecord, _CurrentBuffer, sizeof(_CurrentBuffer));       	        
+			usbStatus = wwsr_usb_read (pCurrentRecord, _CurrentBuffer, sizeof(_CurrentBuffer));       	        
 
 			//read -1h buffer (in real 30-59 min ago)		
-			usbStatus = usbRead(DeviceHandle, p1HrRecord, _1HrBuffer, sizeof(_1HrBuffer));      
+			usbStatus = wwsr_usb_read (p1HrRecord, _1HrBuffer, sizeof(_1HrBuffer));      
 
 			//read -24h buffer (in real 23,5-24 h ago)		
-			usbStatus = usbRead(DeviceHandle, p24HrRecord, _24HrBuffer, sizeof(_24HrBuffer));
+			usbStatus = wwsr_usb_read (p24HrRecord, _24HrBuffer, sizeof(_24HrBuffer));
 
 			// Get the first record data
-			usbStatus = usbRead(DeviceHandle, pFirstRecord, _FirstRecordBuffer, sizeof(_FirstRecordBuffer));     
+			usbStatus = wwsr_usb_read (pFirstRecord, _FirstRecordBuffer, sizeof(_FirstRecordBuffer));     
 		}		
 
 		// over writing the pressure values with what is on the screen instead here.
-		usbStatus = usbRead(DeviceHandle, WS_ABS_PRESSURE, (unsigned char *)&_absPressure, sizeof(_absPressure));
+		usbStatus = wwsr_usb_read (WS_ABS_PRESSURE, (unsigned char *)&_absPressure, sizeof(_absPressure));
 
-		usbStatus = usbRead(DeviceHandle, WS_REL_PRESSURE, (unsigned char *)&_relPressure, sizeof(_relPressure));
+		usbStatus = wwsr_usb_read (WS_REL_PRESSURE, (unsigned char *)&_relPressure, sizeof(_relPressure));
 
 		// Over write the current buffer with the values from the screen    
 		_CurrentBuffer[PRESSURE_LOW_BYTE] = _relPressure;
@@ -212,7 +202,7 @@ int main( int argc, char **argv )
 		// if process data failed
 		if(i == 0)
 		{
-			if(log_sort.all) logger(LOG_DEBUG, logType, "Main", "Error processing data!", NULL);
+			if(log_sort.all) logger (LOG_DEBUG, logType, "Main", "Error processing data!", NULL);
 			return -1;
 		}
 
@@ -279,7 +269,7 @@ int main( int argc, char **argv )
 		if(sendToWunderGround == 1)
 		{
 			// sending to wunderground	     
-			if(log_sort.all || log_sort.database) logger (LOG_DEBUG, logType, "Main", "values going to WunderGround", NULL);
+			if(log_sort.all || log_sort.database) logger  (LOG_DEBUG, logType, "Main", "values going to WunderGround", NULL);
 			createAndSendToWunderGround(&weather, printToScreen);  
 		}
 		// check to see if we should only print to the screen
@@ -290,7 +280,7 @@ int main( int argc, char **argv )
 		else
 		{
 			// Put data to database
-			if(log_sort.all || log_sort.database)  logger (LOG_DEBUG, logType, "Main", "Putting values to the database", NULL);
+			if(log_sort.all || log_sort.database)  logger  (LOG_DEBUG, logType, "Main", "Putting values to the database", NULL);
 
 			putToDatabase();	    	     
 		}
@@ -299,12 +289,12 @@ int main( int argc, char **argv )
 	// Otherwise it returned error'd
 	else
 	{
-		if(log_sort.all || log_sort.usb) logger( LOG_DEBUG, logType, "Main", "Usb Failed to open", NULL );
+		if(log_sort.all || log_sort.usb) logger ( LOG_DEBUG, logType, "Main", "Usb Failed to open", NULL );
 	}
 
-	usbClose( DeviceHandle );
+	wwsr_usb_close ();
 
-	if(log_sort.all || log_sort.usb) logger( LOG_DEBUG, logType, "Main", "Closing the USB", NULL );
+	if(log_sort.all || log_sort.usb) logger ( LOG_DEBUG, logType, "Main", "Closing the USB", NULL );
 
 }
 
@@ -314,7 +304,7 @@ int processData(uint8_t *bufferFirst, uint8_t *bufferCurrent,uint8_t *buffer1Hr,
 	// Get the last stored value time
 	sprintf(weather.last_read, "%d", bufferCurrent[LAST_READ_BYTE]);
 	
-	if(log_sort.all) logger(LOG_DEBUG, logType, "processData", "Processing Data", NULL);
+	if(log_sort.all) logger (LOG_DEBUG, logType, "processData", "Processing Data", NULL);
 
 	weather.out_temp = getTemperature(bufferCurrent, OUTSIDE_TEMPERATURE, g_AsImperial);
 		
@@ -369,7 +359,7 @@ int processData(uint8_t *bufferFirst, uint8_t *bufferCurrent,uint8_t *buffer1Hr,
 	// So now we want to get the previous 24 hours rainfall
 	weather.last_24_hr_rain_fall = getLast24HoursRainFall(bufferCurrent, buffer24Hr, g_AsImperial);
 	
-	if(log_sort.all) logger(LOG_DEBUG, logType, "ProcessData", "processed %d results", sizeof(weather));
+	if(log_sort.all) logger (LOG_DEBUG, logType, "ProcessData", "processed %d results", sizeof(weather));
 	
 	// success!
 	return 1;
@@ -379,15 +369,15 @@ void putToDatabase()
 {			
 	if(connectToDatabase())
 	{
-	  if(log_sort.all || log_sort.database) logger(LOG_DEBUG, logType, "putToDatabase", "Connection to database successful", NULL);
+	  if(log_sort.all || log_sort.database) logger (LOG_DEBUG, logType, "putToDatabase", "Connection to database successful", NULL);
 	  
-	  if(log_sort.all || log_sort.database) logger(LOG_DEBUG, logType, "putToDatabase", "Sending database values", NULL);
+	  if(log_sort.all || log_sort.database) logger (LOG_DEBUG, logType, "putToDatabase", "Sending database values", NULL);
 
 	  insertIntoDatabase(&weather);	  
 	}
 	else
 	{
-	  if(log_sort.all || log_sort.database) logger(LOG_ERROR, logType, "putToDatabase", "Error connecting to database", NULL);
+	  if(log_sort.all || log_sort.database) logger (LOG_ERROR, logType, "putToDatabase", "Error connecting to database", NULL);
 	}
 }
 
