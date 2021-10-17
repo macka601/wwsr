@@ -28,11 +28,9 @@
 #include "wunderground.h"
 
 // the device might get claimed by the kernel, add the following udev rule so that we can access it without
-// being root. Add in /etc/udev/rules.d/<rule_name>
+// being root. Add in /etc/udev/rules.d/<rule_name> eg /etc/udev/rules.d/90-weather.rules
 // # WH-1081 Weather Station
-// #ACTION!="add|change", GOTO="weather_station_end"
-// SUBSYSTEM=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
-
+// SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 // LABEL="weather_station_end"
 
 // usbStatus = 1 for open, 0 for closed
