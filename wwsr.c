@@ -47,11 +47,6 @@
 // SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 // LABEL="weather_station_end"
 
-// usbStatus = 1 for open, 0 for closed
-int usbStatus;
-// default position in log is "now". Altering this can lead to read some of stored values in weather station
-int position; 
-
 static int processData(weather_t *weather, uint8_t *bufferFirst, uint8_t *bufferCurrent,uint8_t *buffer1Hr,uint8_t *buffer24Hr)
 {
   // Get the last stored value time
@@ -222,10 +217,12 @@ int main( int argc, char **argv )
 
   logger (LOG_DEBUG, logType, "Main", "Attempting to Opening the USB", NULL );
 
-  usbStatus = wwsr_usb_open ();
-
   // if the usbStatus is 0 - it returned opened
-  if (usbStatus == 0)
+  if (wwsr_usb_open () != 0)
+  {
+    logger ( LOG_DEBUG, logType, "Main", "Usb Failed to open", NULL );
+  }
+  else 
   {
     logger ( LOG_USB, log_level, __func__, "Usb opened successfully, retrieving data", NULL );
 
@@ -430,12 +427,6 @@ int main( int argc, char **argv )
 
       putToDatabase(&weather);
     }
-
-  }
-  // Otherwise it returned error'd
-  else
-  {
-    if(log_sort.all || log_sort.usb) logger ( LOG_DEBUG, logType, "Main", "Usb Failed to open", NULL );
   }
 
   wwsr_usb_close ();
