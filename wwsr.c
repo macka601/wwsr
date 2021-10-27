@@ -27,6 +27,17 @@
 #include "database.h"
 #include "wunderground.h"
 
+#define WS_STORED_READINGS 27
+#define WS_CURRENT_ENTRY  30
+#define WS_TIME_DATE 43
+#define WS_ABS_PRESSURE 34
+#define WS_REL_PRESSURE 32
+#define WS_MIN_ENTRY_ADDR 0x0100
+#define WS_MAX_ENTRY_ADDR 0xFFF0
+
+#define HOURS 3
+#define MINUTES 4
+
 // the device might get claimed by the kernel, add the following udev rule so that we can access it without
 // being root. Add in /etc/udev/rules.d/<rule_name> eg /etc/udev/rules.d/90-weather.rules
 // # WH-1081 Weather Station
