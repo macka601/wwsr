@@ -120,6 +120,42 @@ int wwsr_usb_close(void)
 	return state;
 }
 
+/* Reads one single 16 byte value */
+int wwsr_usb_read_value (uint16_t address, uint16_t *data)
+{
+	char cmd[9];
+	int state = 0;
+	/* Think that usb transfers are done in 32 bit, thefore
+	 * our buffer must have to be that size as well */
+	char tmp[32];
+	int usb_tx_buf_size = sizeof(tmp);
+
+	log_event log_level = config_get_log_level ();
+
+	memset(data, 0, sizeof(data));
+
+	// Send debug message
+	logger(LOG_USB, log_level, __func__, "Send read command: Addr=0x%04X Size=%u", address, sizeof(data));
+
+	// Format the command
+	sprintf (cmd,"\xA1%c%c%c\xA1%c%c%c", address>>8, address, usb_tx_buf_size, address>>8, address, usb_tx_buf_size);
+
+	// Send the command to the usb device
+	state = usb_control_msg (device_handle, USB_TYPE_CLASS+USB_RECIP_INTERFACE, 0x0000009, 0x0000200, 0, cmd, sizeof(cmd) - 1, 1000);
+
+	// Send debug message if enabled
+	logger(LOG_USB, log_level, __func__, "Sent %d of %d bytes", state, sizeof(cmd) - 1); 
+
+	// initiate a read request to the device
+	state = usb_interrupt_read (device_handle, 0x00000081, tmp, usb_tx_buf_size, 1000);
+
+	// Send debug message if enable
+	logger(LOG_USB, log_level, __func__, "Read %d of %d bytes", state, usb_tx_buf_size);
+
+	memcpy (data, tmp, sizeof(tmp)); 
+
+}
+
 int wwsr_usb_read(uint16_t address, uint8_t *data, uint16_t size)
 {
 	// Initiliaze local values

@@ -8,5 +8,5 @@
 
 int wwsr_usb_open (void);
 int wwsr_usb_close (void);
-int wwsr_usb_read (uint16_t address,uint8_t *data,uint16_t size);
+int wwsr_usb_read_value (uint16_t address, uint16_t *data);
 #endif /* end header guard */
