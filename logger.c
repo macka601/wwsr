@@ -23,7 +23,7 @@ void logger(log_event event, log_event logType, const char *function, char *msg,
 		break;
 		
 		case LOG_USB:
-			if (logType == LOG_USB)
+			if (logType == LOG_USB || logType == LOG_DEBUG)
 			{
 				fprintf(stdout, "usb: wwsr.%s - ",function);
 				vfprintf(stdout, msg, args);

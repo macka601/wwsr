@@ -19,7 +19,7 @@ int wwsr_usb_open (void)
 	// Will return 1 if the usb was successfully opened
 	int state = 0;
 
-	log_event log_level;
+	log_event log_level = config_get_log_level ();
 
 	struct usb_bus *bus;
 
@@ -101,7 +101,7 @@ int wwsr_usb_open (void)
 int wwsr_usb_close(void)
 {
 	int state;
-	log_event log_level;
+	log_event log_level = config_get_log_level ();
 
 	if (device_handle)
 	{
@@ -115,6 +115,7 @@ int wwsr_usb_close(void)
 			logger(LOG_ERROR, log_level, __func__, "Error closing interface, code:%d", state);
 		}
 	}
+	logger(LOG_USB, log_level, __func__, "Closing interface, state is:%d", state);
 
 	return state;
 }
@@ -123,7 +124,7 @@ int wwsr_usb_read(uint16_t address, uint8_t *data, uint16_t size)
 {
 	// Initiliaze local values
 	uint16_t i,c;
-	log_event log_level;
+	log_event log_level = config_get_log_level ();
 
 	// Set the state to 0
 	int state = 0;
