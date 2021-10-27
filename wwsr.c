@@ -39,6 +39,8 @@
 #define HOURS 3
 #define MINUTES 4
 
+#define BUF_SIZE 0x10
+
 // the device might get claimed by the kernel, add the following udev rule so that we can access it without
 // being root. Add in /etc/udev/rules.d/<rule_name> eg /etc/udev/rules.d/90-weather.rules
 // # WH-1081 Weather Station
