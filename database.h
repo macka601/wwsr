@@ -22,10 +22,10 @@ typedef enum dbase_fields {
 
 extern struct weather weather;
 
-int insertIntoDatabase(struct weather*);
-int connectToDatabase();
+int insertIntoDatabase (struct weather*);
+int connectToDatabase ();
 
-int database_init(FILE *config_file, dbase_config_t *dbase_config);
+int database_init (FILE *config_file, dbase_config_t *dbase_config);
 int validate_db_config (dbase_config_t *dbase_config);
 
 #endif /* End of header guard */

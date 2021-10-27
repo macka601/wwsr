@@ -1,8 +1,8 @@
 #ifndef _USBFUNCTIONS_H
 #define _USBFUNCTIONS_H
 
-/* Usb functions as required by the weather program
- * 
+/* 
+ * Usb functions as required by the weather program
  */
 #include <usb.h>
 
