@@ -109,14 +109,13 @@ int wwsr_usb_close(void)
 		if (state!=0) {
 			logger(LOG_ERROR, log_level, __func__, "Could not release interface, code:%d", state);
 		}
-		
+
 		state=usb_close(device_handle);
 		if (state!=0) {
 			logger(LOG_ERROR, log_level, __func__, "Error closing interface, code:%d", state);
 		}
 	}
 	logger(LOG_USB, log_level, __func__, "Closing interface, state is:%d", state);
-
 	return state;
 }
 
@@ -170,7 +169,7 @@ int wwsr_usb_read(uint16_t address, uint8_t *data, uint16_t size)
 	
 	// Set the block of data to 0
 	memset(data, 0, size);
-	
+
 	// Send debug message if enabled
 	logger(LOG_USB, log_level, __func__, "Reading %d bytes from 0x%04X", size, address);
 	
@@ -182,7 +181,7 @@ int wwsr_usb_read(uint16_t address, uint8_t *data, uint16_t size)
 	
 	// if size - 0 is less than c, then size - 0 should equal c
 	s = size - i < c ? size - i:c;
-	
+
 	for (;i < size; i += s, s = size - i < c ? size - i:c)
 	{
 		uint16_t a;
@@ -213,6 +212,5 @@ int wwsr_usb_read(uint16_t address, uint8_t *data, uint16_t size)
 		// Copy the data to tmp
 		memcpy(data+i, tmp, s);
 	}
-	
 	return 0;
 }
