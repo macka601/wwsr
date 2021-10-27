@@ -157,6 +157,29 @@ static void putToScreen(weather_t *weather)
   printf("Total Rain Fall::                 %0.1f mm\n", weather->total_rain_fall);
 }
 
+static int hex2dec (int hexByte)
+{
+    int decimalValue;
+
+    int hexByteLow = hexByte & 0x0F;
+
+    int hexByteHigh = (hexByte >> 4) & 0x0F;
+
+    decimalValue = 0;
+
+    while (hexByteHigh-- > 0)
+    {
+      decimalValue += 10;
+    }
+
+    while (hexByteLow-- > 0)
+    {
+      decimalValue++;
+    }
+
+    return decimalValue;
+}
+
 int main( int argc, char **argv )
 {  
   // variable that holds the options
@@ -456,28 +479,5 @@ size_t getTimeDifference( int timeDifference )
   
     //printf("time variable %ld\n", t);
   
-}
-
-int hex2dec(int hexByte)
-{
-    int decimalValue;
-  
-    int hexByteLow = hexByte & 0x0F;
-    
-    int hexByteHigh = (hexByte >> 4)& 0x0F;    
-    
-    decimalValue = 0;
-    
-    while(hexByteHigh-- > 0)
-    {        
-  decimalValue += 10;
-    }
-    
-    while(hexByteLow-- >0)
-    {
-  decimalValue++;
-    }
-    
-    return decimalValue;
 }
 
