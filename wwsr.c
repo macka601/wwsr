@@ -317,25 +317,21 @@ int main( int argc, char **argv )
       pFirstRecord = (pFirstRecord && 0xFFFF) + WS_MIN_ENTRY_ADDR; 
     }    
 
-    //read current position
-    if (usbStatus == 0)
-    {
-      usbStatus = wwsr_usb_read (pCurrentRecord, _CurrentBuffer, sizeof(_CurrentBuffer));                 
+    wwsr_usb_read (pCurrentRecord, _CurrentBuffer, sizeof(_CurrentBuffer));
 
-      //read -1h buffer (in real 30-59 min ago)   
-      usbStatus = wwsr_usb_read (p1HrRecord, _1HrBuffer, sizeof(_1HrBuffer));      
+    //read -1h buffer (in real 30-59 min ago)
+    wwsr_usb_read (p1HrRecord, _1HrBuffer, sizeof(_1HrBuffer));
 
-      //read -24h buffer (in real 23,5-24 h ago)    
-      usbStatus = wwsr_usb_read (p24HrRecord, _24HrBuffer, sizeof(_24HrBuffer));
+    //read -24h buffer (in real 23,5-24 h ago)
+    wwsr_usb_read (p24HrRecord, _24HrBuffer, sizeof(_24HrBuffer));
 
-      // Get the first record data
-      usbStatus = wwsr_usb_read (pFirstRecord, _FirstRecordBuffer, sizeof(_FirstRecordBuffer));     
-    }   
+    // Get the first record data
+    wwsr_usb_read (pFirstRecord, _FirstRecordBuffer, sizeof(_FirstRecordBuffer));
 
     // over writing the pressure values with what is on the screen instead here.
-    usbStatus = wwsr_usb_read (WS_ABS_PRESSURE, (unsigned char *)&_absPressure, sizeof(_absPressure));
+    wwsr_usb_read (WS_ABS_PRESSURE, (unsigned char *)&_absPressure, sizeof(_absPressure));
 
-    usbStatus = wwsr_usb_read (WS_REL_PRESSURE, (unsigned char *)&_relPressure, sizeof(_relPressure));
+    wwsr_usb_read (WS_REL_PRESSURE, (unsigned char *)&_relPressure, sizeof(_relPressure));
 
     // Over write the current buffer with the values from the screen    
     _CurrentBuffer[PRESSURE_LOW_BYTE] = _relPressure;
