@@ -20,7 +20,28 @@
   }                 \
 } while (0)         \
 
-struct weather weather;
+typedef struct weather {
+	char last_read[3];
+	unsigned char in_humidity;
+	unsigned char out_humidity;
+	float in_temp;
+	float out_temp;
+	float dew_point;
+	float wind_chill;
+	float wind_speed;
+	float wind_gust;
+	char wind_dir[4];
+	char wind_in_degrees[6];
+	float abs_pressure;
+	float rel_pressure;
+	int rainfallTicks;
+	float last_hour_rain_fall;
+	float last_24_hr_rain_fall;
+	float total_rain_fall;
+	int resultIndex;
+	char readBytes[46];
+	char *bytePtr;
+} weather_t;
 
 #define NO_OPTIONS_SELECTED -1
 
@@ -43,29 +64,6 @@ typedef struct config {
 	dbase_config_t dbase_config;
 	wunderground_config_t wunderground_config;
 } config_t;
-
-struct weather {
-	char last_read[3];
-	unsigned char in_humidity;
-	unsigned char out_humidity;
-	float in_temp;
-	float out_temp;
-	float dew_point;
-	float wind_chill;
-	float wind_speed;
-	float wind_gust;
-	char wind_dir[4];
-	char wind_in_degrees[6];
-	float abs_pressure;
-	float rel_pressure;
-	int rainfallTicks;
-	float last_hour_rain_fall;
-	float last_24_hr_rain_fall;
-	float total_rain_fall;	 
-	int resultIndex;	
-	char readBytes[46];
-	char *bytePtr;
-};
 
 
 // Buffer value positions

@@ -26,7 +26,7 @@ ID=%s\
 &baromin=%0.1f\
 &action=updateraw&softwaretype=vws"
 
-int createAndSendToWunderGround(struct weather* w, int printToScreen);
+int createAndSendToWunderGround(struct weather* w);
 void stripWhiteSpace(char *string);
 size_t static write_callback_func(void *buffer, size_t size, size_t nmemb, void *userp);
 

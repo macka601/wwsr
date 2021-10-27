@@ -12,7 +12,7 @@
 #include "config.h"
 
 // you must call processData before this
-int createAndSendToWunderGround(struct weather* w, int printToScreen)
+int createAndSendToWunderGround(struct weather* w)
 {
   /*
   URL_FORMAT "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?
@@ -108,11 +108,6 @@ int createAndSendToWunderGround(struct weather* w, int printToScreen)
     else
     {
       logger(LOG_DEBUG, log_level, "createAndSendToWunderGround", "Command state:: %s", response);
-
-      if (printToScreen == 1)
-      {
-        printf("Results sent to wunderground:: %s", response);
-      }
     }
 
     /* always cleanup */

@@ -25,9 +25,7 @@ extern struct log_sort log_sort;
 char *rtrim(char *const s);
 int g_AsImperial;
 bool g_show_debug_bytes;
-int processData(uint8_t *buffer,uint8_t *buffer2,uint8_t *buffer3, uint8_t *buffer4);
-void putToDatabase();
-void putToScreen();
+
 void Database();
 size_t getTime( char* str, size_t len );
 size_t getEpochTime( char* str, size_t len );
