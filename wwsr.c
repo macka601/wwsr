@@ -223,7 +223,7 @@ int main (int argc, char **argv)
 
         // initialise address positions
         // current address in device, new address and new address -1h and - 24h (for rainfall computation)
-        uint16_t pFirstRecord, current_base_ptr, p1HrRecord, p24HrRecord, pStoredReadings;
+        uint16_t pFirstRecord, current_base_ptr, p1HrRecord, p24HrRecord;
 
         // set the size of the buffers
         uint8_t _CurrentBuffer[BUF_SIZE];
@@ -281,7 +281,7 @@ int main (int argc, char **argv)
         // ((60mins / 5min records) * 24 Hrs) * 16 bytes of data
         p24HrRecord = current_base_ptr - 4608;
 
-        pFirstRecord = current_base_ptr - ((pStoredReadings - 1) * 16);
+        pFirstRecord = current_base_ptr - ((current.num_of_stored_readings - 1) * 16);
 
         //check for buffer owerflow
         if ((current_base_ptr > WS_MAX_ENTRY_ADDR) || (current_base_ptr < WS_MIN_ENTRY_ADDR))
@@ -358,7 +358,7 @@ int main (int argc, char **argv)
         {
             printf ("byteString to go into database = %s\n", weather.readBytes);
 
-            printf ("Currently have %04X (%d) stored readings\n", pStoredReadings, pStoredReadings);
+            printf ("Currently have %04X (%d) stored readings\n", current.num_of_stored_readings, current.num_of_stored_readings);
 
             printf ("\t\t\tByte  | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 0A | 0B | 0C | 0D | 0E | 0F |\n");
 
