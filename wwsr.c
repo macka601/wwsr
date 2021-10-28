@@ -129,6 +129,66 @@ static void putToDatabase (weather_t *weather)
     }
 }
 
+static void wwsr_get_current_record_data (uint16_t *address, uint8_t *buffer, uint8_t size)
+{
+    //check for buffer owerflow
+    if ((*address > WS_MAX_ENTRY_ADDR) || (*address < WS_MIN_ENTRY_ADDR))
+    {
+        *address = (*address && 0xFFFF) + WS_MIN_ENTRY_ADDR;
+    }
+
+    wwsr_usb_read (*address, buffer, size);
+}
+
+static
+void wwsr_get_first_record_data (uint16_t *address, uint16_t stored_readings,
+                                 uint8_t *buffer, uint8_t size)
+{
+    uint16_t _address = *address - ((stored_readings - 1) * 16);
+
+    if ((_address > WS_MAX_ENTRY_ADDR) || (_address < WS_MIN_ENTRY_ADDR))
+    {
+        _address = (_address && 0xFFFF) + WS_MIN_ENTRY_ADDR;
+    }
+
+    wwsr_usb_read (_address, buffer, size);
+}
+
+static
+void wwsr_get_1hr_record_data (uint16_t *address, uint16_t periods,
+                                 uint8_t *buffer, uint8_t size)
+{
+    // 1 Hr pointer address
+    // (60mins / 5min records) * 16 bytes of data
+    uint16_t _address = *address - ((periods + 5) * 16);
+
+    //check for buffer owerflow
+    if ((_address > WS_MAX_ENTRY_ADDR) || (_address < WS_MIN_ENTRY_ADDR))
+    {
+        _address = (_address && 0xFFFF) + WS_MIN_ENTRY_ADDR;
+    }
+
+    //read -1h buffer (in real 30-59 min ago)
+    wwsr_usb_read (_address, buffer, size);
+}
+
+static
+void wwsr_get_24hr_record_data (uint16_t *address, uint8_t *buffer, uint8_t size)
+{
+    // 24 hr pointer address
+    // ((60mins / 5min records) * 24 Hrs) * 16 bytes of data
+    uint16_t _address = *address - 4608;
+
+    //check for buffer owerflow
+    if ((_address > WS_MAX_ENTRY_ADDR) || (_address < WS_MIN_ENTRY_ADDR))
+    {
+        _address = (_address && 0xFFFF) + WS_MIN_ENTRY_ADDR;
+    }
+
+    //read -1h buffer (in real 30-59 min ago)
+    wwsr_usb_read (_address, buffer, size);
+}
+
 static void putToScreen (weather_t *weather)
 {
     char Date[BUFSIZ];
@@ -248,8 +308,6 @@ int main (int argc, char **argv)
 
         wwsr_usb_read_value (WS_STORED_READINGS, &current.num_of_stored_readings);
 
-        printf ("--> Number of stored readings: %d\n", current.num_of_stored_readings);
-
         // Get the current time from the device
         logger (LOG_DEBUG, log_level, __func__, "Getting Weather Stations Time", NULL);
 
@@ -273,47 +331,15 @@ int main (int argc, char **argv)
         // current address
         current_base_ptr = current.entry_address;
 
-        // 1 Hr pointer address
-        // (60mins / 5min records) * 16 bytes of data
-        p1HrRecord = current_base_ptr - ((current.five_min_periods + 5) * 16);
+        wwsr_get_current_record_data (&current.entry_address, &_CurrentBuffer[0], sizeof(_CurrentBuffer));
 
-        // 24 hr pointer address
-        // ((60mins / 5min records) * 24 Hrs) * 16 bytes of data
-        p24HrRecord = current_base_ptr - 4608;
+        wwsr_get_first_record_data (&current.entry_address, current.num_of_stored_readings,
+                                   &_FirstRecordBuffer[0], sizeof(_FirstRecordBuffer));
 
-        pFirstRecord = current_base_ptr - ((current.num_of_stored_readings - 1) * 16);
+        wwsr_get_1hr_record_data (&current.entry_address, current.five_min_periods,
+                                   &_1HrBuffer[0], sizeof(_1HrBuffer));
 
-        //check for buffer owerflow
-        if ((current_base_ptr > WS_MAX_ENTRY_ADDR) || (current_base_ptr < WS_MIN_ENTRY_ADDR))
-        {
-            current_base_ptr = (current_base_ptr && 0xFFFF) + WS_MIN_ENTRY_ADDR;
-        }
-        //check for buffer owerflow
-        if ((p1HrRecord > WS_MAX_ENTRY_ADDR) || (p1HrRecord < WS_MIN_ENTRY_ADDR))
-        {
-            p1HrRecord = (p1HrRecord && 0xFFFF) + WS_MIN_ENTRY_ADDR;
-        }
-        //check for buffer owerflow
-        if ((p24HrRecord > WS_MAX_ENTRY_ADDR) || (p24HrRecord < WS_MIN_ENTRY_ADDR))
-        {
-            p24HrRecord = (p24HrRecord && 0xFFFF) + WS_MIN_ENTRY_ADDR;
-        }
-
-        if ((pFirstRecord > WS_MAX_ENTRY_ADDR) || (pFirstRecord < WS_MIN_ENTRY_ADDR))
-        {
-            pFirstRecord = (pFirstRecord && 0xFFFF) + WS_MIN_ENTRY_ADDR;
-        }
-
-        wwsr_usb_read (current_base_ptr, _CurrentBuffer, sizeof(_CurrentBuffer));
-
-        //read -1h buffer (in real 30-59 min ago)
-        wwsr_usb_read (p1HrRecord, _1HrBuffer, sizeof(_1HrBuffer));
-
-        //read -24h buffer (in real 23,5-24 h ago)
-        wwsr_usb_read (p24HrRecord, _24HrBuffer, sizeof(_24HrBuffer));
-
-        // Get the first record data
-        wwsr_usb_read (pFirstRecord, _FirstRecordBuffer, sizeof(_FirstRecordBuffer));
+        wwsr_get_24hr_record_data (&current.entry_address, &_24HrBuffer[0], sizeof(_24HrBuffer));
 
         // over writing the pressure values with what is on the screen instead here.
         wwsr_usb_read (WS_ABS_PRESSURE, (unsigned char *)&_absPressure, sizeof(_absPressure));
