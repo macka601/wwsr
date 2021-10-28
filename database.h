@@ -22,7 +22,7 @@ typedef enum dbase_fields {
 
 extern struct weather weather;
 
-int insertIntoDatabase (struct weather*);
+int insertIntoDatabase ();
 int connectToDatabase ();
 
 int database_init (FILE *config_file, dbase_config_t *dbase_config);

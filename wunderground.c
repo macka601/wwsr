@@ -34,8 +34,6 @@ int createAndSendToWunderGround(struct weather* w)
   log_event log_level = config_get_log_level ();
   char url[URL_SIZE];
 
-  char *text;
-
   char date[BUFSIZ];
 
   getTime(date, sizeof(date));
@@ -57,20 +55,21 @@ int createAndSendToWunderGround(struct weather* w)
 
   stripWhiteSpace(date);
 
-  // snprintf(url, URL_SIZE, URL_FORMAT,
-  //  dbase.wgId,
-  //  dbase.wgPassword,
-  //  date,
-  //  w->wind_in_degrees,
-  //  wind_speed,
-  //  wind_gust,
-  //  out_temp,
-  //  last_hour_rain_fall,
-  //  w->out_humidity,
-  //  dew_point,
-  //  last_24_hr_rain_fall,
-  //  pressure
-  // );
+  snprintf(url, URL_SIZE, URL_FORMAT,
+    /* TODO: fix  these values from the config options */
+   // dbase.wgId,
+   // dbase.wgPassword,
+   date,
+   w->wind_in_degrees,
+   wind_speed,
+   wind_gust,
+   out_temp,
+   last_hour_rain_fall,
+   w->out_humidity,
+   dew_point,
+   last_24_hr_rain_fall,
+   pressure
+  );
 
   logger(LOG_DEBUG, log_level, "createAndSendToWunderGround", "URL sent:: %s", url);
 
@@ -193,7 +192,6 @@ static void wunderground_copy_config_value (char *src, char **dest, char *name)
 
 int wunderground_init (FILE *config_file, wunderground_config_t *wg_config)
 {
-  char *position;
   char _buffer[BUFSIZ];
   char line[BUFSIZ];
   int ret = 0;

@@ -29,6 +29,4 @@ struct log_sort log_sort;
 // include the logger module
 void logger (log_event event, log_event logType, const char *function, char *msg,...);
 
-static FILE *_log_debug=NULL,*_log_warning=NULL,*_log_error=NULL,*_log_info=NULL, *_log_usb=NULL;
-
 #endif  /* end of logger header guard */

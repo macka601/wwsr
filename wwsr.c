@@ -47,7 +47,7 @@
 // SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 // LABEL="weather_station_end"
 
-static int processData (weather_t *weather, uint8_t *bufferFirst, uint8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
+static int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
 {
     // Get the last stored value time
     sprintf (weather->last_read, "%d", bufferCurrent[LAST_READ_BYTE]);
@@ -179,8 +179,6 @@ static int hex2dec (int hexByte)
 
 int main (int argc, char **argv)
 {
-    // variable that holds the options
-    int option;
     config_t config;
     bool sendToWunderGround = 0;
     g_show_debug_bytes = 0;
@@ -202,9 +200,6 @@ int main (int argc, char **argv)
 
     // Global switch between imperial and metric measurements
     g_AsImperial = 0;
-
-    // redirecting the logging output
-    _log_error = stderr;
 
     ret = config_get_options (argc, argv, &config);
 
@@ -228,9 +223,7 @@ int main (int argc, char **argv)
 
         // initialise address positions
         // current address in device, new address and new address -1h and - 24h (for rainfall computation)
-        uint16_t pMemoryAddress, pFirstRecord, pCurrentRecord, p1HrRecord, p24HrRecord, pStoredReadings;
-
-        uint16_t pTimeAndDate;
+        uint16_t pFirstRecord, current_base_ptr, p1HrRecord, p24HrRecord, pStoredReadings;
 
         // set the size of the buffers
         uint8_t _CurrentBuffer[BUF_SIZE];
@@ -278,22 +271,22 @@ int main (int argc, char **argv)
         logger (LOG_DEBUG, log_level, __func__, buf, NULL);
 
         // current address
-        pCurrentRecord = pMemoryAddress;
+        current_base_ptr = current.entry_address;
 
         // 1 Hr pointer address
         // (60mins / 5min records) * 16 bytes of data
-        p1HrRecord = pMemoryAddress - ((current.five_min_periods + 5) * 16);
+        p1HrRecord = current_base_ptr - ((current.five_min_periods + 5) * 16);
 
         // 24 hr pointer address
         // ((60mins / 5min records) * 24 Hrs) * 16 bytes of data
-        p24HrRecord = pMemoryAddress - 4608;
+        p24HrRecord = current_base_ptr - 4608;
 
-        pFirstRecord = pMemoryAddress - ((pStoredReadings - 1) * 16);
+        pFirstRecord = current_base_ptr - ((pStoredReadings - 1) * 16);
 
         //check for buffer owerflow
-        if ((pCurrentRecord > WS_MAX_ENTRY_ADDR) || (pCurrentRecord < WS_MIN_ENTRY_ADDR))
+        if ((current_base_ptr > WS_MAX_ENTRY_ADDR) || (current_base_ptr < WS_MIN_ENTRY_ADDR))
         {
-            pCurrentRecord = (pCurrentRecord && 0xFFFF) + WS_MIN_ENTRY_ADDR;
+            current_base_ptr = (current_base_ptr && 0xFFFF) + WS_MIN_ENTRY_ADDR;
         }
         //check for buffer owerflow
         if ((p1HrRecord > WS_MAX_ENTRY_ADDR) || (p1HrRecord < WS_MIN_ENTRY_ADDR))
@@ -311,7 +304,7 @@ int main (int argc, char **argv)
             pFirstRecord = (pFirstRecord && 0xFFFF) + WS_MIN_ENTRY_ADDR;
         }
 
-        wwsr_usb_read (pCurrentRecord, _CurrentBuffer, sizeof(_CurrentBuffer));
+        wwsr_usb_read (current_base_ptr, _CurrentBuffer, sizeof(_CurrentBuffer));
 
         //read -1h buffer (in real 30-59 min ago)
         wwsr_usb_read (p1HrRecord, _1HrBuffer, sizeof(_1HrBuffer));
@@ -337,7 +330,7 @@ int main (int argc, char **argv)
         int i = 0;
 
         // Process the data
-        i = processData (&weather, _FirstRecordBuffer, _CurrentBuffer, _1HrBuffer, _24HrBuffer);
+        i = processData (&weather, _CurrentBuffer, _1HrBuffer, _24HrBuffer);
 
         // if process data failed
         if (i == 0)
@@ -378,7 +371,7 @@ int main (int argc, char **argv)
 
             printf ("|\n");
 
-            printf ("Current Buffer Address\t%04X: ", pMemoryAddress);
+            printf ("Current Buffer Address\t%04X: ", current_base_ptr);
 
             for (i = 0; i < sizeof(_CurrentBuffer); i++)
             {
@@ -455,15 +448,3 @@ size_t getEpochTime (char* str, size_t len)
     // return the value.
     return strftime( str, len, "%s", localtime(&t));
 }
-
-size_t getTimeDifference ( int timeDifference )
-{
-    // initialise the time struct.
-    time_t t;
-    // get the time from the pc
-    time (&t);
-
-    //printf ("time variable %ld\n", t);
-
-}
-

@@ -16,7 +16,7 @@
 PGconn *psql;
 
 // inserts collected values into the database
-int insertIntoDatabase (struct weather* w)
+int insertIntoDatabase ()
 {
     log_event log_level = config_get_log_level ();
     // initialise the result pointer
@@ -171,7 +171,6 @@ static void database_copy_config_value (char *src, char **dest, char *name)
 int database_init (FILE *config_file, dbase_config_t *dbase_config)
 {
     int i;
-    char *position;
     char _buffer[BUFSIZ];
     int ret;
     char line[BUFSIZ];
