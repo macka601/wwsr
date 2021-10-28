@@ -196,7 +196,7 @@ int main (int argc, char **argv)
     struct {
         uint16_t entry_address;
         uint16_t num_of_stored_readings;
-        char timestamp[4]; // Format
+        char last_store_time[5]; // Format
         int five_min_periods;
     } current;
 
@@ -260,25 +260,22 @@ int main (int argc, char **argv)
         // Get the current time from the device
         logger (LOG_DEBUG, log_level, __func__, "Getting Weather Stations Time", NULL);
 
-        wwsr_usb_read (WS_TIME_DATE, &current.timestamp[0], sizeof(current.timestamp));
+        wwsr_usb_read (WS_TIME_DATE, &current.last_store_time[0], sizeof(current.last_store_time));
 
-        asprintf (&buf, "Weather Station's Time: %02X:%02X ", current.timestamp[HOURS], current.timestamp[MINUTES]);
+        asprintf (&buf, "Weather Station's last memory store time: %02X:%02X ", current.last_store_time[HOURS], current.last_store_time[MINUTES]);
 
         logger (LOG_DEBUG, log_level, __func__, buf, NULL);
 
         // divide the current time stamp by the amount of 5 min intervals that could have occurred
-        current.five_min_periods = hex2dec (current.timestamp[MINUTES]) / 5;
+        current.five_min_periods = hex2dec (current.last_store_time[MINUTES]) / 5;
 
-        if (log_level == LOG_DEBUG)
-        {
-            asprintf (&buf, "Number of 5 min periods so far this hour = %d", current.five_min_periods);
+        asprintf (&buf, "Number of 5 min periods so far this hour = %d", current.five_min_periods);
 
-            logger (LOG_DEBUG, log_level, __func__, buf, NULL);
+        logger (LOG_DEBUG, log_level, __func__, buf, NULL);
 
-            asprintf (&buf, "1hr pointer will be 0x%04X", current.entry_address - ((current.five_min_periods + 5) * 16));
+        asprintf (&buf, "1hr pointer will be 0x%04X", current.entry_address - ((current.five_min_periods + 5) * 16));
 
-            logger (LOG_DEBUG, log_level, __func__, buf, NULL);
-        }
+        logger (LOG_DEBUG, log_level, __func__, buf, NULL);
 
         // current address
         pCurrentRecord = pMemoryAddress;
