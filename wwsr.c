@@ -214,6 +214,28 @@ static void putToScreen (weather_t *weather)
     printf ("Total Rain Fall::                 %0.1f mm\n", weather->total_rain_fall);
 }
 
+static void wwsr_show_bytes (bool show_header, char* title, uint16_t address, uint8_t *byte_array)
+{
+    char buffer[220];
+    int pos = 0;
+    int i;
+
+    if (show_header)
+    {
+        pos = sprintf(buffer, "\t %-*s| 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 0A | 0B | 0C | 0D | 0E | 0F |\n", 15, " ");
+    }
+
+    pos += sprintf (buffer + pos, "%-15s %3.04X:   ", title, address);
+
+    for (i = 0; i <= 0x0f; i++)
+    {
+        pos += sprintf (buffer + pos, "| %02X ", byte_array[i]);
+    }
+
+    sprintf(buffer + pos, "|");
+    printf ("%s\n", buffer);
+}
+
 static int hex2dec (int hexByte)
 {
     int decimalValue;
@@ -378,51 +400,18 @@ int main (int argc, char **argv)
 
         // weather.bytePtr += sprintf (weather.bytePtr, '\0');
 
-        // This shows all the buffer information
-        // Only comes on when the g_debug option (d) is set or when to show bytes (x))
-        if (log_sort.all == 1 || g_show_debug_bytes == 1)
+        if (config.log_type.bytes || log_level == LOG_DEBUG)
         {
             printf ("byteString to go into database = %s\n", weather.readBytes);
 
             printf ("Currently have %04X (%d) stored readings\n", current.num_of_stored_readings, current.num_of_stored_readings);
 
-            printf ("\t\t\tByte  | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 0A | 0B | 0C | 0D | 0E | 0F |\n");
-
-            printf ("First Buffer Address\t%04X: ", pFirstRecord);
-
-            for (i = 0; i < sizeof(_FirstRecordBuffer); i++)
-            {
-                printf ("| %02X ", _FirstRecordBuffer[i]);
-            }
-
-            printf ("|\n");
-
-            printf ("Current Buffer Address\t%04X: ", current_base_ptr);
-
-            for (i = 0; i < sizeof(_CurrentBuffer); i++)
-            {
-                printf ("| %02X ", _CurrentBuffer[i]);
-            }
-
-            printf ("|\n");
-
-            printf ("1Hr Buffer Address\t%04X: ", p1HrRecord);
-
-            for (i = 0; i < sizeof(_1HrBuffer); i++)
-            {
-                printf ("| %02X ", _1HrBuffer[i]);
-            }
-
-            printf ("|\n");
-
-            printf ("24Hr Buffer Address\t%04X: ", p24HrRecord);
-
-            for (i = 0; i < sizeof(_24HrBuffer); i++)
-            {
-                printf ("| %02X ", _24HrBuffer[i]);
-            }
-
-            printf ("|\n\n");
+            wwsr_show_bytes (true, "First Record", pFirstRecord, &_FirstRecordBuffer[0]);
+            wwsr_show_bytes (false, "Current Record", current_base_ptr, &_CurrentBuffer[0]);
+            wwsr_show_bytes (false, "1Hr Record", p1HrRecord, &_1HrBuffer[0]);
+            wwsr_show_bytes (false, "24Hr Record", p24HrRecord, &_24HrBuffer[0]);
+            // Tidies up the last output, gives a bit of space
+            printf("\n");
         }
 
         if (sendToWunderGround == 1)
