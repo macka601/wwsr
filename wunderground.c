@@ -10,55 +10,66 @@
 #include "database.h"
 #include "logger.h"
 #include "config.h"
+#include "weather_processing.h"
 
-// you must call processData before this
-int createAndSendToWunderGround(struct weather* w)
+#define URL_FORMAT "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?\
+  ID=%s\
+  &PASSWORD=%s\
+  &dateutc=%s\
+  &winddir=%s\
+  &windspeedmph=%0.1f\
+  &windgustmph=%0.1f\
+  &tempf=%0.1f\
+  &rainin=%0.1f\
+  &humidity=%d\
+  &dewptf=%0.1f\
+  &dailyrainin=%0.1f\
+  &baromin=%0.1f\
+  &action=updateraw&softwaretype=vws"
+
+int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w)
 {
-  /*
-  URL_FORMAT "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?
-    ID=%s
-    &PASSWORD=%s
-    &dateutc=%s
-    &windir=%s
-    &windspeedmph=%0.1f
-    &windgustmph=%0.1f
-    &tempf=%0.1f
-    &rainin=%0.1f
-    &humidity=%d
-    &dewptf=%0.1f
-    &dailyrainin=%0.1f
-    &baromin=%0.1f
-    &action=updateraw"
+  CURL *curl;
+  CURLcode res;
 
-  */
-  log_event log_level = config_get_log_level ();
-  char url[URL_SIZE];
+  log_event log_level;
+  log_level = config_get_log_level ();
 
+  float out_temp;
+  float dew_point;
+  float wind_speed;
+  float wind_gust;
+  float pressure;
+  float last_hour_rain_fall;
+  float last_24_hr_rain_fall;
+
+  char *url;
   char date[BUFSIZ];
 
-  getTime(date, sizeof(date));
-
   // convert all the values
-  float out_temp = w->out_temp * 9 / 5 + 32;
+  out_temp = w->out_temp * 9 / 5 + 32;
 
-  float dew_point = w->dew_point * 9 / 5 + 32;
+  dew_point = w->dew_point * 9 / 5 + 32;
 
-  float wind_speed = w->wind_speed * 0.6213;
+  wind_speed = w->wind_speed * 0.6213;
 
-  float wind_gust = w->wind_gust * 0.6213;
+  wind_gust = w->wind_gust * 0.6213;
 
-  float pressure = w->rel_pressure * 0.02953553;
+  pressure = w->rel_pressure * 0.02953553;
 
-  float last_hour_rain_fall = w->last_hour_rain_fall * 0.03937;
+  last_hour_rain_fall = w->last_hour_rain_fall * 0.03937;
 
-  float last_24_hr_rain_fall = w->last_24_hr_rain_fall * 0.03937;
+  last_24_hr_rain_fall = w->last_24_hr_rain_fall * 0.03937;
 
-  stripWhiteSpace(date);
+  getTime (date, sizeof(date));
 
-  snprintf(url, URL_SIZE, URL_FORMAT,
-    /* TODO: fix  these values from the config options */
-   // dbase.wgId,
-   // dbase.wgPassword,
+  logger (LOG_DEBUG, log_level, __func__, "values going to WunderGround", NULL);
+
+  stripWhiteSpace (date);
+
+  asprintf (&url, URL_FORMAT,
+   wg_config->wgId,
+   wg_config->wgPassword,
    date,
    w->wind_in_degrees,
    wind_speed,
@@ -71,10 +82,7 @@ int createAndSendToWunderGround(struct weather* w)
    pressure
   );
 
-  logger(LOG_DEBUG, log_level, "createAndSendToWunderGround", "URL sent:: %s", url);
-
-  CURL *curl;
-  CURLcode res;
+  logger (LOG_DEBUG, log_level, __func__, "URL sent:: %s", url);
 
   // setup curl
   curl = curl_easy_init();
@@ -85,33 +93,35 @@ int createAndSendToWunderGround(struct weather* w)
     char *response = NULL;
 
     //curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt (curl, CURLOPT_URL, url);
 
     /* setting a callback function to return the data */
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback_func);
+    curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_callback_func);
 
     /* passing the pointer to the response as the callback parameter */
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt (curl, CURLOPT_WRITEDATA, &response);
 
     /* Perform the request, res will get the return code */
-    res = curl_easy_perform(curl);
+    res = curl_easy_perform (curl);
 
-    printf("Results sent to wunderground:: %s", response);
+    printf ("Results sent to wunderground:: %s", response);
 
     /* Check for errors */
     if (response != "success")
     {
-      logger(LOG_DEBUG, log_level, "createAndSendToWunderGround", "Command Failed:: %s", curl_easy_strerror(res));
-      logger(LOG_DEBUG, log_level, "createAndSendToWunderGround", "URL sent:: %s", url);
+      logger (LOG_DEBUG, log_level, __func__, "Command Failed:: %s", curl_easy_strerror (res));
+      logger (LOG_DEBUG, log_level, __func__, "URL sent:: %s", url);
     }
     else
     {
-      logger(LOG_DEBUG, log_level, "createAndSendToWunderGround", "Command state:: %s", response);
+      logger (LOG_DEBUG, log_level, __func__, "Command state:: %s", response);
     }
 
     /* always cleanup */
-    curl_easy_cleanup(curl);
+    curl_easy_cleanup (curl);
   }
+
+  free (url);
 }
 
 void stripWhiteSpace(char *string)

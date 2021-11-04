@@ -262,7 +262,6 @@ static int hex2dec (int hexByte)
 int main (int argc, char **argv)
 {
     config_t config;
-    bool sendToWunderGround = 0;
     g_show_debug_bytes = 0;
     log_sort.usb = 0;
     log_sort.all = 0;
@@ -414,12 +413,11 @@ int main (int argc, char **argv)
             printf("\n");
         }
 
-        if (sendToWunderGround == 1)
+        if (config.send_to_wunderground)
         {
-            // sending to wunderground
-            if (log_sort.all || log_sort.database) logger  (LOG_DEBUG, logType, "Main", "values going to WunderGround", NULL);
-            createAndSendToWunderGround (&weather);
+            send_to_wunderground (&config.wunderground_config, &weather);
         }
+
         // check to see if we should only print to the screen
         if (config.print_to_screen)
         {
