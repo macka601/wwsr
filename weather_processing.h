@@ -1,6 +1,7 @@
-#ifndef WEATHERPROCESSING_H
-#define WEATHERPROCESSING_H
+#ifndef WEATHER_PROCESSING_H
+#define WEATHER_PROCESSING_H
 
+#include <stdint.h>
 
 void windDirection(char *windDirBuf, int windByte, int returnAsDegrees);
 float getTemperature(uint8_t *byte, int insideTemp, int asImperial);

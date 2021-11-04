@@ -9,7 +9,7 @@
 #include <math.h>
 
 #include "common.h"
-#include "weatherProcessing.h"
+#include "weather_processing.h"
 #include "logger.h"
 
 void windDirection(char *windDirBuf, int windByte, int returnAsDegrees)

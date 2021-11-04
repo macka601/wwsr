@@ -24,7 +24,7 @@
 #include "wwsr.h"
 #include "wwsr_usb.h"
 #include "logger.h"
-#include "weatherProcessing.h"
+#include "weather_processing.h"
 #include "database.h"
 #include "wunderground.h"
 
@@ -107,7 +107,7 @@ static int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buff
     // So now we want to get the previous 24 hours rainfall
     weather->last_24_hr_rain_fall = getLast24HoursRainFall(bufferCurrent, buffer24Hr, g_AsImperial);
 
-    if (log_sort.all) logger (LOG_DEBUG, logType, "ProcessData", "processed %d results", sizeof(weather));
+    logger (LOG_DEBUG, logType, "ProcessData", "processed %d results", sizeof(weather));
 
     // success!
     return 1;
