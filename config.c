@@ -10,6 +10,7 @@
 #include "common.h"
 #include "logger.h"
 #include "database.h"
+#include "wunderground.h"
 
 // Hard code the file name for the config file
 static char fileName[] = "config";

@@ -7,8 +7,8 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
 
 void windDirection(char *windDirBuf, int windByte, int returnAsDegrees);
 float get_temperature (uint16_t byte, bool unit_type);
-float getWindSpeed(uint8_t *byte);
-float getWindGust(int windGustByte);
+float get_wind_speed (uint8_t byte, bool unit_type);
+const char *get_wind_direction (uint8_t windByte, bool returnAsDegrees);
 float getAbsPressure(uint8_t *byte);
 float getRelPressure(uint8_t *byte);
 unsigned char  getHumidity(unsigned char byte);

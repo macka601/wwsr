@@ -51,9 +51,9 @@ int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w)
 
   dew_point = w->dew_point * 9 / 5 + 32;
 
-  wind_speed = w->wind_speed * 0.6213;
+  wind_speed = get_wind_speed (w->wind_speed, UNIT_TYPE_IS_IMPERIAL);
 
-  wind_gust = w->wind_gust * 0.6213;
+  wind_gust = get_wind_speed (w->wind_gust, UNIT_TYPE_IS_IMPERIAL);
 
   pressure = w->rel_pressure * 0.02953553;
 
@@ -71,7 +71,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w)
    wg_config->wgId,
    wg_config->wgPassword,
    date,
-   w->wind_in_degrees,
+   get_wind_direction(w->wind_dir, WIND_AS_DEGREES),
    wind_speed,
    wind_gust,
    out_temp,

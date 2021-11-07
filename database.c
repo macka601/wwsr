@@ -31,6 +31,7 @@ int insertIntoDatabase ()
     // Get the date string
     getTime(dateString, sizeof(dateString));
 
+    /* TODO: Weather items now stored as ints etc.. change this over */
     // this is the query string, writes all variables to the string
     // snprintf(queryString, sizeof(queryString), "INSERT INTO %s (\"time\", \"in_humidity\", \"out_humidity\", \"in_temperature\","
     //  "\"out_temperature\", \"out_dew_temperature\", \"windchill_temperature\", \"wind_speed\""

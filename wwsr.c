@@ -137,10 +137,10 @@ static void putToScreen (weather_t *weather)
     printf ("Temperature Outside::             %0.1fºC\n", get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC));
     printf ("Dew Point Temperature::           %0.1fºC\n", weather->dew_point);
     printf ("Feels like Temperature::          %0.1fºC\n", weather->wind_chill);
-    printf ("Wind Speed::                      %0.1f km/h\n", weather->wind_speed);
-    printf ("Wind Gust::                       %0.1f km/h\n", weather->wind_gust);
-    printf ("Wind Direction::                  %s\n", weather->wind_dir);
-    printf ("Wind Direction (Degrees)::        %s\n", weather->wind_in_degrees);
+    printf ("Wind Speed::                      %0.1f km/h\n", get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC));
+    printf ("Wind Gust::                       %0.1f km/h\n", get_wind_speed(weather->wind_gust, UNIT_TYPE_IS_METRIC));
+    printf ("Wind Direction::                  %s\n", get_wind_direction (weather->wind_dir, WIND_AS_TEXT));
+    printf ("Wind Direction (Degrees)::        %s\n", get_wind_direction (weather->wind_dir, WIND_AS_DEGREES));
     printf ("Abs Pressure::                    %0.1f hPa\n", weather->abs_pressure);
     printf ("Relative Pressure::               %0.1f hPa\n", weather->rel_pressure);
     printf ("Last 1Hr Rain Fall::              %0.1f mm\n", weather->last_hour_rain_fall);

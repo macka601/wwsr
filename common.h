@@ -29,10 +29,9 @@ typedef struct weather {
     uint16_t out_temp;
     float dew_point;
     float wind_chill;
-    float wind_speed;
-    float wind_gust;
-    char wind_dir[4];
-    char wind_in_degrees[6];
+    uint8_t wind_speed;
+    uint8_t wind_gust;
+    uint8_t wind_dir;
     float abs_pressure;
     float rel_pressure;
     int rainfallTicks;
@@ -68,6 +67,9 @@ typedef struct config {
 
 #define UNIT_TYPE_IS_METRIC     0
 #define UNIT_TYPE_IS_IMPERIAL   1
+
+#define WIND_AS_DEGREES         0
+#define WIND_AS_TEXT            1
 
 // Buffer value positions
 #define LAST_READ_BYTE    0x00
