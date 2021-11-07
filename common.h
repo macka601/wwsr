@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "database.h"
 #include "wunderground.h"
@@ -24,8 +25,8 @@ typedef struct weather {
     char last_read[3];
     unsigned char in_humidity;
     unsigned char out_humidity;
-    float in_temp;
-    float out_temp;
+    uint16_t in_temp;
+    uint16_t out_temp;
     float dew_point;
     float wind_chill;
     float wind_speed;
@@ -65,6 +66,8 @@ typedef struct config {
     wunderground_config_t wunderground_config;
 } config_t;
 
+#define UNIT_TYPE_IS_METRIC     0
+#define UNIT_TYPE_IS_IMPERIAL   1
 
 // Buffer value positions
 #define LAST_READ_BYTE    0x00

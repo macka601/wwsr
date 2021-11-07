@@ -48,59 +48,46 @@ void windDirection(char *windDirBuf, int windByte, int returnAsDegrees)
       }	     
 }
 
-float getTemperature(uint8_t *byte, int insideTemp, int asImperial)
+float get_temperature (uint16_t temp_as_bytes, bool unit_type)
 {
-  
-  // combine the two bytes 
-  int t_byte;
-  if(insideTemp == 1)
-  {
-    //t_byte = byte[INSIDE_TEMP_LOW_BYTE] + byte[INSIDE_TEMP_HIGH_BYTE];
-	t_byte = (byte[INSIDE_TEMP_HIGH_BYTE] << 8) | (byte[INSIDE_TEMP_LOW_BYTE] & 0xff);
-  }
-  else
-  {
-//    t_byte = byte[OUTSIDE_TEMP_LOW_BYTE] + byte[OUTSIDE_TEMP_HIGH_BYTE];
-      t_byte = (byte[OUTSIDE_TEMP_HIGH_BYTE] << 8) | (byte[OUTSIDE_TEMP_LOW_BYTE] & 0xff);
-
-  }
   float temperature;
 
-  // Check to see if the most significant bit of the high byte is set
-  // Indicates that it's a negative number
+  // Multiply by 0.1 deg to get temperature 
+  temperature = temp_as_bytes * 0.1;
+
+  if (unit_type == UNIT_TYPE_IS_IMPERIAL)
+  {
+    // Multiply by 0.1 deg to get temperature 
+    temperature = temperature * 9/5 + 32;
+  }
+
+  return temperature;
+}
+
+
+/* Convert the two temperature bytes into one 16 bit byte */
+static uint16_t convert_temperature (uint8_t high_byte, uint8_t low_byte)
+{
+  int t_byte;
+
+  t_byte = (high_byte << 8) | (low_byte & 0xff);
+
+  // Check the MSB see, if it negative
   if (t_byte & 0x8000) 
   {
-    //weather station uses top bit for sign and not normal
-    t_byte = t_byte & 0x7FFF;  
+    // weather station uses top bit for sign and not normal
+    t_byte = t_byte & 0x7FFF;
 
     // Number was negative take it away from 1 to get it into negatives.
     t_byte = 0 - t_byte;
   }
-  else    
+  else
   {
-    //signed short, so we need to correct this with xor			
-    t_byte = t_byte ^ 0x0000;   
-  } 
-	
-  // Multiply by 0.1 deg to get temperature	
-  temperature = t_byte * 0.1;
+    // signed short, so we need to correct this with xor
+    t_byte = t_byte ^ 0x0000;
+  }
 
-  // Check to see if the result is normal
-  if((temperature > 50) || (temperature < -30))
-  {
-    if(log_sort.all) logger( LOG_DEBUG, logType, "weatherProcessing", "Error: outside temp is not within bounds", NULL);
-    // exit!
-    exit(0);
-  }
-	
-  // Check if the imperial flag is set
-  if(asImperial == 1)
-  {
-    // return temperature as Fahrenhiet
-    temperature = temperature * 9/5 + 32;
-  }
-	
-  return temperature;
+  return t_byte;
 }
 
 float getWindSpeed(uint8_t *byte)
@@ -180,7 +167,7 @@ float getDewPoint(float temperature, float humidity)
   return dewPoint;
 }
 
-float getWindChill(uint8_t *byte, int asImperial)//float temperature, float windSpeed, int humidity)
+float getWindChill (weather_t *weather, int asImperial)
 {
   // --- Wind Chill Calculation --- //
   float windChill;
@@ -190,13 +177,16 @@ float getWindChill(uint8_t *byte, int asImperial)//float temperature, float wind
   float windSpeed;
   
   int humidity;
-  
-  temperature = getTemperature(byte, OUTSIDE_TEMPERATURE, asImperial);
-  
-  windSpeed = getWindSpeed(byte);
-  
-  humidity = getHumidity(byte[OUTSIDE_HUMIDITY_BYTE]);
-  
+
+  logger( LOG_DEBUG, logType, "processData", "Units will be in %s", asImperial == UNIT_TYPE_IS_METRIC ? "Metric" : "Imperial");
+
+  temperature = get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC);
+
+  /* TODO: convert the weather struct to use bytes, not floats */
+  windSpeed = weather->wind_speed; // getWindSpeed(weather);
+
+  humidity = weather->out_humidity; //getHumidity(byte[OUTSIDE_HUMIDITY_BYTE]);
+
   // check for which formula to use 
   if(temperature < 11 && windSpeed > 4)
   {
@@ -208,7 +198,7 @@ float getWindChill(uint8_t *byte, int asImperial)//float temperature, float wind
   else
   {
     // Use Apparent temperature
-    if(log_sort.all) logger( LOG_DEBUG, logType, "processData", "Using Apparent Temperature forumla", NULL);
+    logger( LOG_DEBUG, logType, "processData", "Using Apparent Temperature forumla", NULL);
 
     // Version including the effects of temperature, humidity, and wind:
     // AT = Ta + 0.33×e − 0.70×ws − 4.00
@@ -300,4 +290,74 @@ float getTotalRainFall(uint8_t *byte, int asImperial)
   }
 
   return total;
+}
+
+int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
+{
+    log_event log_level;
+
+    log_level = config_get_log_level ();
+
+    // Get the last stored value time
+    sprintf (weather->last_read, "%d", bufferCurrent[LAST_READ_BYTE]);
+
+    logger (LOG_DEBUG, log_level, __func__, "Processing Data", NULL);
+
+    weather->out_temp = convert_temperature (bufferCurrent[OUTSIDE_TEMP_HIGH_BYTE], bufferCurrent[OUTSIDE_TEMP_LOW_BYTE]);
+
+    weather->in_temp = convert_temperature (bufferCurrent[INSIDE_TEMP_HIGH_BYTE], bufferCurrent[INSIDE_TEMP_LOW_BYTE]);
+
+    // --- wind speed calculation --- //
+
+    weather->wind_speed = getWindSpeed(bufferCurrent);
+
+    // cast the buffer as a float to get the 0.1 accuracy
+    // Then convert into km/h by multiplying by 3.6
+    weather->wind_gust = getWindGust(bufferCurrent[WIND_GUST_BYTE]);
+
+    // get the wind direction
+//  char *ptr_dir = weather.wind_dir;
+
+    windDirection(&weather->wind_dir[0], bufferCurrent[WIND_DIR_BYTE], 0);
+
+//  ptr_dir = weather.wind_in_degrees;
+
+    windDirection(&weather->wind_in_degrees[0], bufferCurrent[WIND_DIR_BYTE], 1);
+
+    // ----- //
+
+    // --- Humidity Calculations --- //
+    // Get the humidity values out of the buffer
+
+    weather->in_humidity = getHumidity(bufferCurrent[INSIDE_HUMIDITY_BYTE]);
+
+    weather->out_humidity = getHumidity(bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
+
+    // --- Dew Point Calculation --- //
+    weather->dew_point = getDewPoint(weather->out_temp, weather->out_humidity);
+
+    // --- Air Pressure Calculation --- //
+    //weather.pressure = (bufferCurrent[PRESSURE_LOW_BYTE] + (bufferCurrent[PRESSURE_HIGH_BYTE] << 8)) / 10;
+    weather->abs_pressure = getAbsPressure(bufferCurrent);
+
+    // Relative pressure
+    // abs. pressure
+    weather->rel_pressure = getRelPressure(bufferCurrent);
+
+    weather->wind_chill = getWindChill (weather, UNIT_TYPE_IS_METRIC);
+
+    // --- Rain Calculation --- //
+    // Rain is recorded in ticks since the batteries were inserted.
+    weather->total_rain_fall = getTotalRainFall(bufferCurrent, UNIT_TYPE_IS_METRIC);
+
+    // So now we want to get the previous hours rainfall
+    weather->last_hour_rain_fall = getLastHoursRainFall(bufferCurrent, buffer1Hr, UNIT_TYPE_IS_METRIC);
+
+    // So now we want to get the previous 24 hours rainfall
+    weather->last_24_hr_rain_fall = getLast24HoursRainFall(bufferCurrent, buffer24Hr, UNIT_TYPE_IS_METRIC);
+
+    logger (LOG_DEBUG, logType, "ProcessData", "processed %d results", sizeof(weather));
+
+    // success!
+    return 1;
 }

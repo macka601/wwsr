@@ -47,72 +47,6 @@
 // SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 // LABEL="weather_station_end"
 
-static int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
-{
-    // Get the last stored value time
-    sprintf (weather->last_read, "%d", bufferCurrent[LAST_READ_BYTE]);
-
-    if (log_sort.all) logger (LOG_DEBUG, logType, "processData", "Processing Data", NULL);
-
-    weather->out_temp = getTemperature(bufferCurrent, OUTSIDE_TEMPERATURE, g_AsImperial);
-
-    weather->in_temp = getTemperature(bufferCurrent, INSIDE_TEMPERATURE, g_AsImperial);
-
-    // --- wind speed calculation --- //
-
-    weather->wind_speed = getWindSpeed(bufferCurrent);
-
-    // cast the buffer as a float to get the 0.1 accuracy
-    // Then convert into km/h by multiplying by 3.6
-    weather->wind_gust = getWindGust(bufferCurrent[WIND_GUST_BYTE]);
-
-    // get the wind direction
-//  char *ptr_dir = weather.wind_dir;
-
-    windDirection(&weather->wind_dir[0], bufferCurrent[WIND_DIR_BYTE], 0);
-
-//  ptr_dir = weather.wind_in_degrees;
-
-    windDirection(&weather->wind_in_degrees[0], bufferCurrent[WIND_DIR_BYTE], 1);
-
-    // ----- //
-
-    // --- Humidity Calculations --- //
-    // Get the humidity values out of the buffer
-
-    weather->in_humidity = getHumidity(bufferCurrent[INSIDE_HUMIDITY_BYTE]);
-
-    weather->out_humidity = getHumidity(bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
-
-    // --- Dew Point Calculation --- //
-    weather->dew_point = getDewPoint(weather->out_temp, weather->out_humidity);
-
-    // --- Air Pressure Calculation --- //
-    //weather.pressure = (bufferCurrent[PRESSURE_LOW_BYTE] + (bufferCurrent[PRESSURE_HIGH_BYTE] << 8)) / 10;
-    weather->abs_pressure = getAbsPressure(bufferCurrent);
-
-    // Relative pressure
-    // abs. pressure
-    weather->rel_pressure = getRelPressure(bufferCurrent);
-
-    weather->wind_chill = getWindChill(bufferCurrent, g_AsImperial);
-
-    // --- Rain Calculation --- //
-    // Rain is recorded in ticks since the batteries were inserted.
-    weather->total_rain_fall = getTotalRainFall(bufferCurrent, g_AsImperial);
-
-    // So now we want to get the previous hours rainfall
-    weather->last_hour_rain_fall = getLastHoursRainFall(bufferCurrent, buffer1Hr, g_AsImperial);
-
-    // So now we want to get the previous 24 hours rainfall
-    weather->last_24_hr_rain_fall = getLast24HoursRainFall(bufferCurrent, buffer24Hr, g_AsImperial);
-
-    logger (LOG_DEBUG, logType, "ProcessData", "processed %d results", sizeof(weather));
-
-    // success!
-    return 1;
-}
-
 static void putToDatabase (weather_t *weather)
 {
     if (connectToDatabase())
@@ -199,8 +133,8 @@ static void putToScreen (weather_t *weather)
     printf ("Current Time::                    %s\n", Date);
     printf ("Humidity Inside::                 %d%%\n", weather->in_humidity);
     printf ("Humidity Outside::                %d%%\n", weather->out_humidity);
-    printf ("Temperature Inside::              %0.1fºC\n", weather->in_temp);
-    printf ("Temperature Outside::             %0.1fºC\n", weather->out_temp);
+    printf ("Temperature Inside::              %0.1fºC\n", get_temperature(weather->in_temp, UNIT_TYPE_IS_METRIC));
+    printf ("Temperature Outside::             %0.1fºC\n", get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC));
     printf ("Dew Point Temperature::           %0.1fºC\n", weather->dew_point);
     printf ("Feels like Temperature::          %0.1fºC\n", weather->wind_chill);
     printf ("Wind Speed::                      %0.1f km/h\n", weather->wind_speed);

@@ -47,7 +47,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w)
   char date[BUFSIZ];
 
   // convert all the values
-  out_temp = w->out_temp * 9 / 5 + 32;
+  out_temp = get_temperature (w->out_temp, UNIT_TYPE_IS_IMPERIAL);
 
   dew_point = w->dew_point * 9 / 5 + 32;
 

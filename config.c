@@ -121,6 +121,8 @@ int config_get_options (int argc, char **argv, config_t *config)
         case 'p':
             printf ("Showing the current values from the weather station\n");
             config->print_to_screen = 1;
+            // Disable this option
+            config->send_to_wunderground = 0;
             break;
 
         // All debug information on
@@ -131,13 +133,15 @@ int config_get_options (int argc, char **argv, config_t *config)
             break;
 
         case 'x':
-            // config->log_level = LOG_DEBUG;
             config->log_type.bytes = 1;
-            logger (LOG_DEBUG, LOG_DEBUG, __func__, "g_debug_bytes flag ON", NULL);
+            logger (LOG_DEBUG, LOG_DEBUG, __func__, "debug bytes flag ON", NULL);
             break;
 
         case 'w':
-            config->send_to_wunderground = 1;
+            if (!config->print_to_screen)
+            {
+                config->send_to_wunderground = 1;
+            }
             break;
 
         case 'i':
