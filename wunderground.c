@@ -49,7 +49,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w)
   // convert all the values
   out_temp = get_temperature (w->out_temp, UNIT_TYPE_IS_IMPERIAL);
 
-  dew_point = w->dew_point * 9 / 5 + 32;
+  dew_point = get_dew_point (w->out_temp, w->out_humidity, UNIT_TYPE_IS_IMPERIAL);
 
   wind_speed = get_wind_speed (w->wind_speed, UNIT_TYPE_IS_IMPERIAL);
 

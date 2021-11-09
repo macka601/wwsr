@@ -144,12 +144,14 @@ static uint8_t check_humidity (uint8_t humidity)
   return humidity;
 }
 
-float getDewPoint(float temperature, float humidity)
+float get_dew_point (uint16_t tbyte, uint8_t humidity, bool unit_type)
 {
   // --- Dew Point Calculation --- //
   float gama;
-
   float dewPoint;
+  float temperature;
+
+  temperature = get_temperature (tbyte, UNIT_TYPE_IS_METRIC);
 
   //in case of 0% humidity
   if (humidity == 0)
@@ -166,6 +168,12 @@ float getDewPoint(float temperature, float humidity)
 
   // dewPoint= (b * gama) / (a - gama)
   dewPoint = (237.7 * gama) / (17.271 - gama);
+
+  if (unit_type == UNIT_TYPE_IS_IMPERIAL)
+  {
+    // Convert dew point to an integer and use existing temp function
+    return get_temperature ((uint16_t) (dewPoint * 10), UNIT_TYPE_IS_IMPERIAL);
+  }
 
   return dewPoint;
 }
@@ -315,9 +323,6 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
   weather->in_humidity = check_humidity (bufferCurrent[INSIDE_HUMIDITY_BYTE]);
 
   weather->out_humidity = check_humidity (bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
-
-  // --- Dew Point Calculation --- //
-  weather->dew_point = getDewPoint(weather->out_temp, weather->out_humidity);
 
   // --- Air Pressure Calculation --- //
   //weather.pressure = (bufferCurrent[PRESSURE_LOW_BYTE] + (bufferCurrent[PRESSURE_HIGH_BYTE] << 8)) / 10;

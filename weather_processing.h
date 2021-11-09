@@ -11,7 +11,7 @@ float get_wind_speed (uint8_t byte, bool unit_type);
 const char *get_wind_direction (uint8_t windByte, bool returnAsDegrees);
 float getAbsPressure(uint8_t *byte);
 float getRelPressure(uint8_t *byte);
-float getDewPoint(float temperature, float humidity);
+float get_dew_point(uint16_t temperature, uint8_t humidity, bool unit_type);
 float getWindChill (weather_t *weather, int asImperial);
 float getLastHoursRainFall(uint8_t *byteCurrent, uint8_t *byteHourly, int asImperial);
 float getLast24HoursRainFall(uint8_t *byteCurrent, uint8_t *byte24Hour, int asImperial);

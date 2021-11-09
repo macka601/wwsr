@@ -135,7 +135,7 @@ static void putToScreen (weather_t *weather)
     printf ("Humidity Outside::                %d%%\n", weather->out_humidity);
     printf ("Temperature Inside::              %0.1fºC\n", get_temperature(weather->in_temp, UNIT_TYPE_IS_METRIC));
     printf ("Temperature Outside::             %0.1fºC\n", get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC));
-    printf ("Dew Point Temperature::           %0.1fºC\n", weather->dew_point);
+    printf ("Dew Point Temperature::           %0.1fºC\n", get_dew_point (weather->out_temp, weather->out_humidity, UNIT_TYPE_IS_METRIC));
     printf ("Feels like Temperature::          %0.1fºC\n", weather->wind_chill);
     printf ("Wind Speed::                      %0.1f km/h\n", get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC));
     printf ("Wind Gust::                       %0.1f km/h\n", get_wind_speed(weather->wind_gust, UNIT_TYPE_IS_METRIC));

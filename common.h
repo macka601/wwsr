@@ -27,7 +27,6 @@ typedef struct weather {
     uint8_t out_humidity;
     uint16_t in_temp;
     uint16_t out_temp;
-    float dew_point;
     float wind_chill;
     uint8_t wind_speed;
     uint8_t wind_gust;
