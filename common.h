@@ -27,12 +27,11 @@ typedef struct weather {
     uint8_t out_humidity;
     uint16_t in_temp;
     uint16_t out_temp;
-    float wind_chill;
     uint8_t wind_speed;
     uint8_t wind_gust;
     uint8_t wind_dir;
-    float abs_pressure;
-    float rel_pressure;
+    uint16_t abs_pressure;
+    uint16_t rel_pressure;
     int rainfallTicks;
     float last_hour_rain_fall;
     float last_24_hr_rain_fall;

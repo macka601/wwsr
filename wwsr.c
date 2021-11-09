@@ -136,13 +136,13 @@ static void putToScreen (weather_t *weather)
     printf ("Temperature Inside::              %0.1fºC\n", get_temperature(weather->in_temp, UNIT_TYPE_IS_METRIC));
     printf ("Temperature Outside::             %0.1fºC\n", get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC));
     printf ("Dew Point Temperature::           %0.1fºC\n", get_dew_point (weather->out_temp, weather->out_humidity, UNIT_TYPE_IS_METRIC));
-    printf ("Feels like Temperature::          %0.1fºC\n", weather->wind_chill);
+    printf ("Feels like Temperature::          %0.1fºC\n", get_wind_chill (weather, UNIT_TYPE_IS_METRIC));
     printf ("Wind Speed::                      %0.1f km/h\n", get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC));
     printf ("Wind Gust::                       %0.1f km/h\n", get_wind_speed(weather->wind_gust, UNIT_TYPE_IS_METRIC));
     printf ("Wind Direction::                  %s\n", get_wind_direction (weather->wind_dir, WIND_AS_TEXT));
     printf ("Wind Direction (Degrees)::        %s\n", get_wind_direction (weather->wind_dir, WIND_AS_DEGREES));
-    printf ("Abs Pressure::                    %0.1f hPa\n", weather->abs_pressure);
-    printf ("Relative Pressure::               %0.1f hPa\n", weather->rel_pressure);
+    printf ("Abs Pressure::                    %0.1f hPa\n", get_pressure (weather->abs_pressure));
+    printf ("Relative Pressure::               %0.1f hPa\n", get_pressure (weather->rel_pressure));
     printf ("Last 1Hr Rain Fall::              %0.1f mm\n", weather->last_hour_rain_fall);
     printf ("Last 24Hr Rain Fall::             %0.1f mm\n", weather->last_24_hr_rain_fall);
     printf ("Total Rain Fall::                 %0.1f mm\n", weather->total_rain_fall);

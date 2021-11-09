@@ -114,22 +114,9 @@ float get_wind_speed (uint8_t byte, bool unit_type)
   return windspeed;
 }
 
-float getAbsPressure(uint8_t *byte)
+float get_pressure (uint16_t byte)
 {
-  float AbsPressure;
-
-  AbsPressure = (byte[ABS_PRESSURE_LOW_BYTE] + (byte[ABS_PRESSURE_HIGH_BYTE] << 8)) * 0.1;
-
-  return AbsPressure;
-}
-
-float getRelPressure(uint8_t *byte)
-{
-  float relPressure;
-
-  relPressure = (byte[PRESSURE_LOW_BYTE] + (byte[PRESSURE_HIGH_BYTE] << 8)) * 0.1;
-
-  return relPressure;
+  return (float) (byte * 0.1);
 }
 
 static uint8_t check_humidity (uint8_t humidity)
@@ -178,26 +165,25 @@ float get_dew_point (uint16_t tbyte, uint8_t humidity, bool unit_type)
   return dewPoint;
 }
 
-float getWindChill (weather_t *weather, int asImperial)
+float get_wind_chill (weather_t *weather, bool unit_type)
 {
-  // --- Wind Chill Calculation --- //
   float windChill;
-
   float temperature;
-
   float windSpeed;
+  log_event log_level;
 
-  logger( LOG_DEBUG, logType, "processData", "Units will be in %s", asImperial == UNIT_TYPE_IS_METRIC ? "Metric" : "Imperial");
+  log_level = config_get_log_level ();
 
-  temperature = get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC);
+  logger (LOG_DEBUG, log_level, __func__, "Units will be in %s", unit_type == UNIT_TYPE_IS_METRIC ? "Metric" : "Imperial");
 
-  /* TODO: convert the weather struct to use bytes, not floats */
-  windSpeed = get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC);
+  temperature = get_temperature (weather->out_temp, UNIT_TYPE_IS_METRIC);
+
+  windSpeed = get_wind_speed (weather->wind_speed, UNIT_TYPE_IS_METRIC);
 
   // check for which formula to use
   if (temperature < 11 && windSpeed > 4)
   {
-    if (log_sort.all) logger( LOG_DEBUG, logType, "processData", "Using Wind Chill Temperature forumla", NULL);
+    logger (LOG_DEBUG, log_level, __func__, "Using Wind Chill Temperature forumla", NULL);
     // this formula only works for temps less than 10 deg, and a min windspeed of 5km/h
     windChill = 13.12 + 0.6215 * temperature - 11.37 * pow(windSpeed, 0.16)
                 + 0.3965 * temperature * pow(windSpeed, 0.16);
@@ -205,7 +191,7 @@ float getWindChill (weather_t *weather, int asImperial)
   else
   {
     // Use Apparent temperature
-    logger( LOG_DEBUG, logType, "processData", "Using Apparent Temperature forumla", NULL);
+    logger (LOG_DEBUG, log_level, __func__, "Using Apparent Temperature forumla", NULL);
 
     // Version including the effects of temperature, humidity, and wind:
     // AT = Ta + 0.33×e − 0.70×ws − 4.00
@@ -215,11 +201,11 @@ float getWindChill (weather_t *weather, int asImperial)
 
     e = (weather->out_humidity / 100.0) * 6.105 * exp(17.27 * temperature / (237.7 + temperature));
 
-    if (log_sort.all) logger(LOG_DEBUG, logType, "processData", "e value is %f", e);
+    logger (LOG_DEBUG, log_level, __func__, "e value is %f", e);
 
     windChill = round(temperature + 0.33 * e - 0.7 * (windSpeed / 3.6) - 4.00);
 
-    if (log_sort.all) logger(LOG_DEBUG, logType, "processData", "Apparent Temperature is %f", windChill);
+    logger (LOG_DEBUG, log_level, __func__, "Apparent Temperature is %f", windChill);
 
   }
 
@@ -324,15 +310,9 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
 
   weather->out_humidity = check_humidity (bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
 
-  // --- Air Pressure Calculation --- //
-  //weather.pressure = (bufferCurrent[PRESSURE_LOW_BYTE] + (bufferCurrent[PRESSURE_HIGH_BYTE] << 8)) / 10;
-  weather->abs_pressure = getAbsPressure(bufferCurrent);
+  weather->abs_pressure = (bufferCurrent[ABS_PRESSURE_HIGH_BYTE] << 8) | bufferCurrent[ABS_PRESSURE_LOW_BYTE] & 0xff;
 
-  // Relative pressure
-  // abs. pressure
-  weather->rel_pressure = getRelPressure(bufferCurrent);
-
-  weather->wind_chill = getWindChill (weather, UNIT_TYPE_IS_METRIC);
+  weather->rel_pressure =  (bufferCurrent[PRESSURE_HIGH_BYTE] << 8) | bufferCurrent[PRESSURE_LOW_BYTE] & 0xff;
 
   // --- Rain Calculation --- //
   // Rain is recorded in ticks since the batteries were inserted.
