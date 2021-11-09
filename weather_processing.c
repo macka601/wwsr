@@ -132,12 +132,15 @@ float getRelPressure(uint8_t *byte)
   return relPressure;
 }
 
-unsigned char getHumidity(unsigned char humidity)
+static uint8_t check_humidity (uint8_t humidity)
 {
+  log_event log_level = config_get_log_level ();
+
   if (humidity > 0x64) {
-    printf("humidity greater than 100%\n");
+    logger (LOG_ERROR, log_level, __func__, "humidity greater than 100%");
     humidity = 0x64;
   }
+
   return humidity;
 }
 
@@ -176,16 +179,12 @@ float getWindChill (weather_t *weather, int asImperial)
 
   float windSpeed;
 
-  int humidity;
-
   logger( LOG_DEBUG, logType, "processData", "Units will be in %s", asImperial == UNIT_TYPE_IS_METRIC ? "Metric" : "Imperial");
 
   temperature = get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC);
 
   /* TODO: convert the weather struct to use bytes, not floats */
   windSpeed = get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC);
-
-  humidity = weather->out_humidity; //getHumidity(byte[OUTSIDE_HUMIDITY_BYTE]);
 
   // check for which formula to use
   if (temperature < 11 && windSpeed > 4)
@@ -206,7 +205,7 @@ float getWindChill (weather_t *weather, int asImperial)
 
     float e;
 
-    e = (humidity / 100.0) * 6.105 * exp(17.27 * temperature / (237.7 + temperature));
+    e = (weather->out_humidity / 100.0) * 6.105 * exp(17.27 * temperature / (237.7 + temperature));
 
     if (log_sort.all) logger(LOG_DEBUG, logType, "processData", "e value is %f", e);
 
@@ -313,14 +312,9 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
 
   weather->wind_dir = bufferCurrent[WIND_DIR_BYTE];
 
-  // ----- //
+  weather->in_humidity = check_humidity (bufferCurrent[INSIDE_HUMIDITY_BYTE]);
 
-  // --- Humidity Calculations --- //
-  // Get the humidity values out of the buffer
-
-  weather->in_humidity = getHumidity(bufferCurrent[INSIDE_HUMIDITY_BYTE]);
-
-  weather->out_humidity = getHumidity(bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
+  weather->out_humidity = check_humidity (bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
 
   // --- Dew Point Calculation --- //
   weather->dew_point = getDewPoint(weather->out_temp, weather->out_humidity);

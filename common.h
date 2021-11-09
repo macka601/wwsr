@@ -23,8 +23,8 @@
 
 typedef struct weather {
     char last_read[3];
-    unsigned char in_humidity;
-    unsigned char out_humidity;
+    uint8_t in_humidity;
+    uint8_t out_humidity;
     uint16_t in_temp;
     uint16_t out_temp;
     float dew_point;
