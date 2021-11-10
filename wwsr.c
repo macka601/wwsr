@@ -123,29 +123,47 @@ void wwsr_get_24hr_record_data (uint16_t *address, uint8_t *buffer, uint8_t size
     wwsr_usb_read (_address, buffer, size);
 }
 
-static void putToScreen (weather_t *weather)
+static void put_to_screen (weather_t *weather)
 {
     char Date[BUFSIZ];
+    char *buf;
 
     getTime (Date, sizeof(Date));
 
-    printf ("Mins since last stored reading::  %s\n", weather->last_read);
-    printf ("Current Time::                    %s\n", Date);
-    printf ("Humidity Inside::                 %d%%\n", weather->in_humidity);
-    printf ("Humidity Outside::                %d%%\n", weather->out_humidity);
-    printf ("Temperature Inside::              %0.1fºC\n", get_temperature(weather->in_temp, UNIT_TYPE_IS_METRIC));
-    printf ("Temperature Outside::             %0.1fºC\n", get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC));
-    printf ("Dew Point Temperature::           %0.1fºC\n", get_dew_point (weather->out_temp, weather->out_humidity, UNIT_TYPE_IS_METRIC));
-    printf ("Feels like Temperature::          %0.1fºC\n", get_wind_chill (weather, UNIT_TYPE_IS_METRIC));
-    printf ("Wind Speed::                      %0.1f km/h\n", get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC));
-    printf ("Wind Gust::                       %0.1f km/h\n", get_wind_speed(weather->wind_gust, UNIT_TYPE_IS_METRIC));
-    printf ("Wind Direction::                  %s\n", get_wind_direction (weather->wind_dir, WIND_AS_TEXT));
-    printf ("Wind Direction (Degrees)::        %s\n", get_wind_direction (weather->wind_dir, WIND_AS_DEGREES));
-    printf ("Abs Pressure::                    %0.1f hPa\n", get_pressure (weather->abs_pressure));
-    printf ("Relative Pressure::               %0.1f hPa\n", get_pressure (weather->rel_pressure));
-    printf ("Last 1Hr Rain Fall::              %0.1f mm\n", get_rainfall (weather->last_hour_rain_fall, UNIT_TYPE_IS_METRIC));
-    printf ("Last 24Hr Rain Fall::             %0.1f mm\n", get_rainfall (weather->last_24_hr_rain_fall, UNIT_TYPE_IS_METRIC));
-    printf ("Total Rain Fall::                 %0.1f mm\n", get_rainfall (weather->total_rain_fall, UNIT_TYPE_IS_METRIC));
+    asprintf (&buf,
+             "Mins since last stored reading::  %s\n"
+             "Current Time::                    %s\n"
+             "Humidity Inside::                 %d%%\n"
+             "Humidity Outside::                %d%%\n"
+             "Temperature Inside::              %0.1fºC\n"
+             "Temperature Outside::             %0.1fºC\n"
+             "Dew Point Temperature::           %0.1fºC\n"
+             "Feels like Temperature::          %0.1fºC\n"
+             "Wind Speed::                      %0.1f km/h\n"
+             "Wind Gust::                       %0.1f km/h\n"
+             "Wind Direction::                  %s\n"
+             "Wind Direction (Degrees)::        %s\n"
+             "Abs Pressure::                    %0.1f hPa\n"
+             "Relative Pressure::               %0.1f hPa\n"
+             "Last 1Hr Rain Fall::              %0.1f mm\n"
+             "Last 24Hr Rain Fall::             %0.1f mm\n"
+             "Total Rain Fall::                 %0.1f mm\n",
+        weather->last_read, Date, weather->in_humidity, weather->out_humidity, 
+        get_temperature(weather->in_temp, UNIT_TYPE_IS_METRIC),
+        get_temperature(weather->out_temp, UNIT_TYPE_IS_METRIC),
+        get_dew_point (weather->out_temp, weather->out_humidity, UNIT_TYPE_IS_METRIC),
+        get_wind_chill (weather, UNIT_TYPE_IS_METRIC),
+        get_wind_speed(weather->wind_speed, UNIT_TYPE_IS_METRIC),
+        get_wind_speed(weather->wind_gust, UNIT_TYPE_IS_METRIC),
+        get_wind_direction (weather->wind_dir, WIND_AS_TEXT),
+        get_wind_direction (weather->wind_dir, WIND_AS_DEGREES),
+        get_pressure (weather->abs_pressure),
+        get_pressure (weather->rel_pressure),
+        get_rainfall (weather->last_hour_rain_fall, UNIT_TYPE_IS_METRIC),
+        get_rainfall (weather->last_24_hr_rain_fall, UNIT_TYPE_IS_METRIC),
+        get_rainfall (weather->total_rain_fall, UNIT_TYPE_IS_METRIC));
+
+    printf("%s\n", buf);
 }
 
 static void wwsr_show_bytes (bool show_header, char* title, uint16_t address, uint8_t *byte_array)
@@ -346,7 +364,7 @@ int main (int argc, char **argv)
         // check to see if we should only print to the screen
         if (config.print_to_screen)
         {
-            putToScreen (&weather);
+            put_to_screen (&weather);
         }
         else
         {
