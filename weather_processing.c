@@ -267,17 +267,15 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
 
   weather->out_humidity = check_humidity (bufferCurrent[OUTSIDE_HUMIDITY_BYTE]);
 
-  weather->abs_pressure = (bufferCurrent[ABS_PRESSURE_HIGH_BYTE] << 8) | bufferCurrent[ABS_PRESSURE_LOW_BYTE] & 0xff;
+  weather->abs_pressure = convert_to_16bit (bufferCurrent, ABS_PRESSURE_HIGH_BYTE, ABS_PRESSURE_LOW_BYTE);
 
-  weather->rel_pressure =  (bufferCurrent[PRESSURE_HIGH_BYTE] << 8) | bufferCurrent[PRESSURE_LOW_BYTE] & 0xff;
+  weather->rel_pressure =  convert_to_16bit (bufferCurrent, PRESSURE_HIGH_BYTE, PRESSURE_LOW_BYTE);
 
   // Rain is recorded in ticks since the batteries were inserted.
   weather->total_rain_fall = convert_to_16bit (bufferCurrent, RAIN_TICK_HIGH_BYTE, RAIN_TICK_LOW_BYTE);
 
-  // So now we want to get the previous hours rainfall
   weather->last_hour_rain_fall = process_rainfall_diff (weather->total_rain_fall, buffer1Hr);
 
-  // So now we want to get the previous 24 hours rainfall
   weather->last_24_hr_rain_fall = process_rainfall_diff (weather->total_rain_fall, buffer24Hr);
 
   logger (LOG_DEBUG, log_level, "ProcessData", "processed %d results", sizeof(weather));
