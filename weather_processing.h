@@ -12,9 +12,7 @@ const char *get_wind_direction (uint8_t windByte, bool returnAsDegrees);
 float get_pressure(uint16_t byte);
 float get_dew_point(uint16_t temperature, uint8_t humidity, bool unit_type);
 float get_wind_chill (weather_t *weather, bool unit_type);
-float getLastHoursRainFall(uint8_t *byteCurrent, uint8_t *byteHourly, int asImperial);
-float getLast24HoursRainFall(uint8_t *byteCurrent, uint8_t *byte24Hour, int asImperial);
-float getTotalRainFall(uint8_t *byte, int asImperial);
+float get_rainfall(uint16_t byte, bool unit_type);
 
 extern int logType;
 

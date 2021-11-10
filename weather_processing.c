@@ -212,74 +212,31 @@ float get_wind_chill (weather_t *weather, bool unit_type)
   return windChill;
 }
 
-float getLastHoursRainFall(uint8_t *byteCurrent, uint8_t *byteHourly, int asImperial)
+static uint16_t convert_to_16bit (uint8_t *buffer, uint8_t index1, uint8_t index2)
 {
-  float last_hour_rain_fall;
-
-  int Rain1Hr;
-
-  int RainTotal;
-
-  Rain1Hr = (byteHourly[RAIN_TICK_LOW_BYTE] + (byteHourly[RAIN_TICK_HIGH_BYTE] << 8));
-
-  // Get the total rain record (which is just the current one)
-  RainTotal = (byteCurrent[RAIN_TICK_LOW_BYTE] + (byteCurrent[RAIN_TICK_HIGH_BYTE] << 8));
-
-  // So now we want to get the previous hours rainfall
-  // RainCurrent(Total) - the record from an hr ago.
-  last_hour_rain_fall = (RainTotal - Rain1Hr) * 0.3;
-
-  if (asImperial == 1)
-  {
-    last_hour_rain_fall = last_hour_rain_fall * 0.011;
-  }
-
-  return last_hour_rain_fall;
-
+  return buffer[index1] << 8 | buffer[index2] & 0xff; 
 }
 
-float getLast24HoursRainFall(uint8_t *byteCurrent, uint8_t *byte24Hour, int asImperial)
+static uint16_t process_rainfall_diff (uint16_t rain_a, uint8_t *rain_b)
 {
-  int RainTotal;
+  uint16_t temp;
 
-  int Rain24Hr;
+  temp = convert_to_16bit (rain_b, RAIN_TICK_HIGH_BYTE, RAIN_TICK_LOW_BYTE);
 
-  float last24HoursRainFall;
-
-  // Get the total rain record (which is just the current one)
-  RainTotal = (byteCurrent[RAIN_TICK_LOW_BYTE] + (byteCurrent[RAIN_TICK_HIGH_BYTE] << 8));
-
-  // Get the 24Hr rain record
-  Rain24Hr = (byte24Hour[RAIN_TICK_LOW_BYTE] + (byte24Hour[RAIN_TICK_HIGH_BYTE] << 8));
-
-  // And then we want the last 24hr rain fall buffer
-  // RainCurrent(Total) - the record from an 24hrs ago.
-  last24HoursRainFall = (RainTotal - Rain24Hr) * 0.3;
-
-  // check if returning in imperial units
-  if (asImperial == 1)
-  {
-    last24HoursRainFall = last24HoursRainFall * 0.011;
-  }
-
-  return last24HoursRainFall;
+  return rain_a - temp;
 }
 
-float getTotalRainFall(uint8_t *byte, int asImperial)
+float get_rainfall(uint16_t byte, bool unit_type)
 {
-  int RainTotal;
-
   float total;
 
-  RainTotal = (byte[RAIN_TICK_LOW_BYTE] + (byte[RAIN_TICK_HIGH_BYTE] << 8));
-
-  // Rain Total is the current buffer - the first record.
-  total = RainTotal * 0.3;
+  // Bucket size is 0.3mm per tip
+  total = byte * 0.2965;
 
   // check if returning in imperial units
-  if (asImperial == 1)
+  if (unit_type == UNIT_TYPE_IS_IMPERIAL)
   {
-    total = total * 0.011;
+    return total * 0.011;
   }
 
   return total;
@@ -314,15 +271,14 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
 
   weather->rel_pressure =  (bufferCurrent[PRESSURE_HIGH_BYTE] << 8) | bufferCurrent[PRESSURE_LOW_BYTE] & 0xff;
 
-  // --- Rain Calculation --- //
   // Rain is recorded in ticks since the batteries were inserted.
-  weather->total_rain_fall = getTotalRainFall(bufferCurrent, UNIT_TYPE_IS_METRIC);
+  weather->total_rain_fall = convert_to_16bit (bufferCurrent, RAIN_TICK_HIGH_BYTE, RAIN_TICK_LOW_BYTE);
 
   // So now we want to get the previous hours rainfall
-  weather->last_hour_rain_fall = getLastHoursRainFall(bufferCurrent, buffer1Hr, UNIT_TYPE_IS_METRIC);
+  weather->last_hour_rain_fall = process_rainfall_diff (weather->total_rain_fall, buffer1Hr);
 
   // So now we want to get the previous 24 hours rainfall
-  weather->last_24_hr_rain_fall = getLast24HoursRainFall(bufferCurrent, buffer24Hr, UNIT_TYPE_IS_METRIC);
+  weather->last_24_hr_rain_fall = process_rainfall_diff (weather->total_rain_fall, buffer24Hr);
 
   logger (LOG_DEBUG, log_level, "ProcessData", "processed %d results", sizeof(weather));
 

@@ -143,9 +143,9 @@ static void putToScreen (weather_t *weather)
     printf ("Wind Direction (Degrees)::        %s\n", get_wind_direction (weather->wind_dir, WIND_AS_DEGREES));
     printf ("Abs Pressure::                    %0.1f hPa\n", get_pressure (weather->abs_pressure));
     printf ("Relative Pressure::               %0.1f hPa\n", get_pressure (weather->rel_pressure));
-    printf ("Last 1Hr Rain Fall::              %0.1f mm\n", weather->last_hour_rain_fall);
-    printf ("Last 24Hr Rain Fall::             %0.1f mm\n", weather->last_24_hr_rain_fall);
-    printf ("Total Rain Fall::                 %0.1f mm\n", weather->total_rain_fall);
+    printf ("Last 1Hr Rain Fall::              %0.1f mm\n", get_rainfall (weather->last_hour_rain_fall, UNIT_TYPE_IS_METRIC));
+    printf ("Last 24Hr Rain Fall::             %0.1f mm\n", get_rainfall (weather->last_24_hr_rain_fall, UNIT_TYPE_IS_METRIC));
+    printf ("Total Rain Fall::                 %0.1f mm\n", get_rainfall (weather->total_rain_fall, UNIT_TYPE_IS_METRIC));
 }
 
 static void wwsr_show_bytes (bool show_header, char* title, uint16_t address, uint8_t *byte_array)

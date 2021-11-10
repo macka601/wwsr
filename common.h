@@ -33,9 +33,9 @@ typedef struct weather {
     uint16_t abs_pressure;
     uint16_t rel_pressure;
     int rainfallTicks;
-    float last_hour_rain_fall;
-    float last_24_hr_rain_fall;
-    float total_rain_fall;
+    uint16_t last_hour_rain_fall;
+    uint16_t last_24_hr_rain_fall;
+    uint16_t total_rain_fall;
     int resultIndex;
     char readBytes[46];
     char *bytePtr;
