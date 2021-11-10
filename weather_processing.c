@@ -242,7 +242,7 @@ float get_rainfall(uint16_t byte, bool unit_type)
   return total;
 }
 
-int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
+void process_data (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
 {
   log_event log_level;
 
@@ -279,7 +279,4 @@ int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, 
   weather->last_24_hr_rain_fall = process_rainfall_diff (weather->total_rain_fall, buffer24Hr);
 
   logger (LOG_DEBUG, log_level, "ProcessData", "processed %d results", sizeof(weather));
-
-  // success!
-  return 1;
 }

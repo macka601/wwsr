@@ -203,7 +203,8 @@ int main (int argc, char **argv)
     int ret;
     log_event log_level;
     char *buf = NULL;
-
+    int i;
+    
     weather_t weather;
 
     struct {
@@ -308,17 +309,7 @@ int main (int argc, char **argv)
 
         _CurrentBuffer[ABS_PRESSURE_HIGH_BYTE] = _absPressure >> 8;
 
-        int i = 0;
-
-        // Process the data
-        i = processData (&weather, _CurrentBuffer, _1HrBuffer, _24HrBuffer);
-
-        // if process data failed
-        if (i == 0)
-        {
-            if (log_sort.all) logger (LOG_DEBUG, logType, "Main", "Error processing data!", NULL);
-            return -1;
-        }
+        process_data (&weather, _CurrentBuffer, _1HrBuffer, _24HrBuffer);
 
         weather.bytePtr = weather.readBytes;
 

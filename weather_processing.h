@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-int processData (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr);
-
+void process_data (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr);
 void windDirection(char *windDirBuf, int windByte, int returnAsDegrees);
 float get_temperature (uint16_t byte, bool unit_type);
 float get_wind_speed (uint8_t byte, bool unit_type);
