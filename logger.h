@@ -25,6 +25,14 @@ struct log_sort
     bool all;
 };
 
+typedef struct log_type
+{
+    bool usb;
+    bool bytes;
+    bool database;
+    bool all;
+} log_type_t;
+
 struct log_sort log_sort;
 // include the logger module
 void logger (log_event event, log_event logType, const char *function, char *msg,...);

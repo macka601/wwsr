@@ -7,7 +7,6 @@
 
 #include "common.h"
 #include "wunderground.h"
-#include "database.h"
 #include "logger.h"
 #include "config.h"
 #include "weather_processing.h"
@@ -27,7 +26,7 @@
   &baromin=%0.1f\
   &action=updateraw&softwaretype=vws"
 
-int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w)
+int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 {
   CURL *curl;
   CURLcode res;

@@ -7,19 +7,10 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "database.h"
-#include "wunderground.h"
 /*
  *
  * Common variables used across the weather program
  */
-
-#define RETURN_IF_ERROR(f) do { \
-  int retval = (f); \
-  if (retval < 0) { \
-    return -1;      \
-  }                 \
-} while (0)         \
 
 typedef struct weather {
     char last_read[3];
@@ -41,27 +32,14 @@ typedef struct weather {
     char *bytePtr;
 } weather_t;
 
+#define RETURN_IF_ERROR(f) do { \
+  int retval = (f); \
+  if (retval < 0) { \
+    return -1;      \
+  }                 \
+} while (0)         \
+
 #define NO_OPTIONS_SELECTED -1
-
-typedef struct log_type
-{
-    bool usb;
-    bool bytes;
-    bool database;
-    bool all;
-} log_type_t;
-
-/* Configuration options */
-typedef struct config {
-    bool print_to_screen;
-    bool send_to_wunderground;
-    bool show_debug_bytes; /* TODO: this probably should be a log level? */
-    bool show_as_imperial;
-    int log_level;
-    log_type_t log_type;
-    dbase_config_t dbase_config;
-    wunderground_config_t wunderground_config;
-} config_t;
 
 #define UNIT_TYPE_IS_METRIC     0
 #define UNIT_TYPE_IS_IMPERIAL   1

@@ -9,7 +9,7 @@ typedef struct wunderground_config {
 	char *wgId;
 } wunderground_config_t;
 
-int send_to_wunderground(wunderground_config_t *wg_config, struct weather* w);
+int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w);
 void stripWhiteSpace(char *string);
 size_t static write_callback_func(void *buffer, size_t size, size_t nmemb, void *userp);
 
