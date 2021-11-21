@@ -13,9 +13,7 @@ int logType;
 int g_AsImperial;
 bool g_show_debug_bytes;
 
-size_t getTime (char* str, size_t len );
-size_t getEpochTime (char* str, size_t len);
-size_t getTimeDifference (int timeDifference );
+size_t wwsr_get_time (char* str, size_t len );
 int changeWindDirectionToDegrees (char *directionAsText);
 
 #endif /* end of header guard */

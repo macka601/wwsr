@@ -120,7 +120,7 @@ static void put_to_screen (weather_t *weather)
     char Date[BUFSIZ];
     char *buf;
 
-    getTime (Date, sizeof(Date));
+    wwsr_get_time (Date, sizeof(Date));
 
     asprintf (&buf,
              "Mins since last stored reading::  %s\n"
@@ -373,7 +373,7 @@ int main (int argc, char **argv)
 
 }
 
-size_t getTime ( char* str, size_t len )
+size_t wwsr_get_time ( char* str, size_t len )
 {
     // initialise the time struct.
     time_t t;
@@ -383,16 +383,4 @@ size_t getTime ( char* str, size_t len )
 
     // return the value.
     return strftime ( str, len, "%Y-%m-%d %H:%M:%S", localtime(&t) );
-}
-
-size_t getEpochTime (char* str, size_t len)
-{
-    // initialise the time struct.
-    time_t t;
-
-    // get the time from the pc
-    time (&t);
-
-    // return the value.
-    return strftime( str, len, "%s", localtime(&t));
 }

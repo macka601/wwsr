@@ -13,6 +13,4 @@ float get_dew_point(uint16_t temperature, uint8_t humidity, bool unit_type);
 float get_wind_chill (weather_t *weather, bool unit_type);
 float get_rainfall(uint16_t byte, bool unit_type);
 
-extern int logType;
-
 #endif /* end of header guard */

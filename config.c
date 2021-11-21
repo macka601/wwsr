@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "config.h"
 #include "common.h"
 #include "logger.h"

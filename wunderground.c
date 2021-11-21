@@ -10,6 +10,7 @@
 #include "logger.h"
 #include "config.h"
 #include "weather_processing.h"
+#include "wwsr.h"
 
 #define URL_FORMAT "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?\
   ID=%s\
@@ -60,7 +61,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 
   last_24_hr_rain_fall = w->last_24_hr_rain_fall * 0.03937;
 
-  getTime (date, sizeof(date));
+  wwsr_get_time (date, sizeof(date));
 
   logger (LOG_DEBUG, log_level, __func__, "values going to WunderGround", NULL);
 
