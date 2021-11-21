@@ -49,9 +49,13 @@
 
 static void put_to_database (dbase_config_t *dbconfig, weather_t *weather)
 {
+    log_event log_level;
+
+    log_level = config_get_log_level ();
+
     if (database_insert (dbconfig, weather) < 0)
     {
-        logger (LOG_ERROR, logType, __func__, "Error connecting to database", NULL);
+        logger (LOG_ERROR, log_level, __func__, "Error connecting to database", NULL);
     }
 }
 
@@ -206,7 +210,6 @@ static int hex2dec (int hexByte)
 int main (int argc, char **argv)
 {
     config_t config;
-    g_show_debug_bytes = 0;
     log_sort.usb = 0;
     log_sort.all = 0;
     log_sort.database = 0;
@@ -224,9 +227,6 @@ int main (int argc, char **argv)
         int five_min_periods;
     } current;
 
-    // Global switch between imperial and metric measurements
-    g_AsImperial = 0;
-
     ret = config_get_options (argc, argv, &config);
 
     if (ret == NO_OPTIONS_SELECTED)
@@ -236,12 +236,12 @@ int main (int argc, char **argv)
 
     log_level = config_get_log_level ();
 
-    logger (LOG_DEBUG, logType, "Main", "Attempting to Opening the USB", NULL);
+    logger (LOG_DEBUG, log_level, __func__, "Attempting to Opening the USB", NULL);
 
     // if the usbStatus is 0 - it returned opened
     if (wwsr_usb_open () != 0)
     {
-        logger (LOG_DEBUG, logType, "Main", "Usb Failed to open", NULL);
+        logger (LOG_DEBUG, log_level, __func__, "Usb Failed to open", NULL);
     }
     else
     {
@@ -369,7 +369,7 @@ int main (int argc, char **argv)
 
     wwsr_usb_close ();
 
-    if (log_sort.all || log_sort.usb) logger (LOG_DEBUG, logType, "Main", "Closing the USB", NULL);
+    logger (LOG_DEBUG, log_level, __func__, "Closing the USB", NULL);
 
 }
 
