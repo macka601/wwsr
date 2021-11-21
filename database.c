@@ -12,91 +12,199 @@
 #include "common.h"
 #include <string.h>
 #include "config.h"
+#include <mysql.h>
+#include "weather_processing.h"
 
-PGconn *psql;
+// PGconn *psql;
+MYSQL  mysql;
 
-// inserts collected values into the database
-int insertIntoDatabase ()
+
+// static int connect_to_postgreql (dbase_config_t *dbconfig)
+// {
+//     /* init connection */
+//     psql = PQconnectdb(connectionInfo);
+
+//     // Connection failed
+//     if (PQstatus (psql) != CONNECTION_OK) {
+//         // Connection error, put the error to error output
+//         logger (LOG_DEBUG, log_level, __func__, "libpq error: PQstatus(psql) != CONNECTION_OK", NULL);
+//         logger (LOG_DEBUG, log_level, __func__, "PSQL Error Message: '%s'", PQerrorMessage(psql));
+//         return -1;
+//     }
+//     else
+//     {
+//         logger (LOG_DEBUG, log_level, __func__, "Connection made to the database", NULL);
+//         return 0;
+//     }
+// }
+
+// static int database_insert_postsql_weather_data (char *table, weather_t *data)
+// {
+//     log_event log_level;
+//     PGresult *dbResult;
+//     int ret;
+
+//     log_level = config_get_log_level ();
+
+//     asprintf (&queryString,
+//               "INSERT INTO %s (time, in_humidity, out_humidity, in_temperature,"
+//               "out_temperature, out_dew_temperature, windchill_temperature, wind_speed"
+//               ", wind_gust, wind_direction, pressure, rel_pressure, rain_last_hour"
+//               ", rain_last_24h, rain_total, bytes) values (now(), %d, %d, %0.1f, %0.1f" \
+//               ", '%0.1f', '%0.1f', '%0.1f', '%0.1f', '%s', '%0.1f', '%0.1f', '%0.1f','%0.1f', '%0.1f', '%s');",
+//               table,
+//               data->in_humidity,
+//               data->out_humidity,
+//               get_temperature(data->in_temp, UNIT_TYPE_IS_METRIC),
+//               get_temperature(data->out_temp, UNIT_TYPE_IS_METRIC),
+//               get_dew_point (data->out_temp, data->out_humidity, UNIT_TYPE_IS_METRIC),
+//               get_wind_chill (data, UNIT_TYPE_IS_METRIC),
+//               get_wind_speed(data->wind_speed, UNIT_TYPE_IS_METRIC),
+//               get_wind_speed(data->wind_gust, UNIT_TYPE_IS_METRIC),
+//               get_wind_direction (data->wind_dir, WIND_AS_TEXT),
+//               get_pressure (data->abs_pressure),
+//               get_pressure (data->rel_pressure),
+//               get_rainfall (data->last_hour_rain_fall, UNIT_TYPE_IS_METRIC),
+//               get_rainfall (data->last_24_hr_rain_fall, UNIT_TYPE_IS_METRIC),
+//               get_rainfall (data->total_rain_fall, UNIT_TYPE_IS_METRIC),
+//               data->readBytes);
+//
+//    dbResult = PQexec (psql, queryString);
+//
+//    // If the command was successful
+//    if (PQresultStatus (dbResult) == PGRES_COMMAND_OK )
+//    {
+//        logger (LOG_DEBUG, log_level, __func__, "Entered into Database ok", NULL);
+//    }
+//    else
+//    {
+//        logger (LOG_DEBUG, log_level, __func__, "Command Failed:: %s", PQerrorMessage(psql));
+//        ret = -1;
+//    }
+//    free (queryString);
+//
+//    return ret;
+// }
+
+static int connect_to_mysql (dbase_config_t *dbconfig)
 {
-    log_event log_level = config_get_log_level ();
-    // initialise the result pointer
-    PGresult *dbResult;
+    log_event log_level;
+    char *debug_con_string; // For debugging only, does not contain password
+    int ret;
 
-    // Query String buffer
-    char queryString[BUFSIZ];
+    log_level = config_get_log_level ();
 
-    // Date string buffer
-    char dateString[60];
+    // Do a separate buffer for screen output that does not contain the password
+    asprintf (&debug_con_string, "host=%s dbname=%s port=%d user=%s password=%s", dbconfig->host, dbconfig->dbname,
+              dbconfig->port, dbconfig->user, "******");
 
-    // Get the date string
-    getTime(dateString, sizeof(dateString));
+    logger (LOG_DEBUG, log_level, __func__, "Sending connection string:: %s", debug_con_string);
+    logger (LOG_DEBUG, log_level, __func__, "Attempting to connect to database server", NULL);
 
-    /* TODO: Weather items now stored as ints etc.. change this over */
-    // this is the query string, writes all variables to the string
-    // snprintf(queryString, sizeof(queryString), "INSERT INTO %s (\"time\", \"in_humidity\", \"out_humidity\", \"in_temperature\","
-    //  "\"out_temperature\", \"out_dew_temperature\", \"windchill_temperature\", \"wind_speed\""
-    //  ", \"wind_gust\", \"wind_direction\", \"pressure\", \"rel_pressure\", \"rain_last_hour\""
-    //  ", \"rain_last_24h\", \"rain_total\",\"bytes\") values (now(), '%d', '%d', '%0.1f', %0.1f" \
-    //  ", '%0.1f', '%0.1f', '%0.1f', '%0.1f', '%s', '%0.1f', '%0.1f', '%0.1f','%0.1f', '%0.1f', '%s');",
-    //  dbase.table, w->in_humidity, w->out_humidity, w->in_temp,
-    //  w->out_temp, w->dew_point, w->wind_chill, w->wind_speed, w->wind_gust,
-    //  w->wind_dir, w->abs_pressure, w->rel_pressure, w->last_hour_rain_fall,
-    //  w->last_24_hr_rain_fall, w->total_rain_fall, w->readBytes);
-
-    // If debug turned on, show the connection string
-    if (log_sort.all || log_sort.database) logger (LOG_DEBUG, log_level, "insertIntoDatabase", "Query String:: %s", queryString);
-
-    // execute the connection string
-    dbResult = PQexec (psql, queryString);
-
-    // If the command was successful
-    if (PQresultStatus (dbResult) == PGRES_COMMAND_OK )
+    if (mysql_init (&mysql) == NULL)
     {
-        // If debug turned on, announce success
-        if (log_sort.all || log_sort.database) logger (LOG_DEBUG, log_level, "insertIntoDatabase", "Entered into Database ok", NULL);
+        logger (LOG_DEBUG, log_level, __func__, "Couldn't initialise mysql handle");
+        ret = -1;
     }
     else
     {
-        // command failed, write error to error output
-        if (log_sort.all || log_sort.database) logger (LOG_DEBUG, log_level, "insertIntoDatabase", "Command Failed:: %s", PQerrorMessage(psql));
+        if (!mysql_real_connect (&mysql, dbconfig->host, dbconfig->user, dbconfig->password, dbconfig->dbname, dbconfig->port, NULL, 0))
+        {
+            logger (LOG_DEBUG, log_level, __func__, "Couldn't connect to mysql");
+            ret = -1;
+        }
+        else
+        {
+            logger (LOG_DEBUG, log_level, __func__, "Connection made to the database", NULL);
+        }
     }
+
+    free (debug_con_string);
+
+    return ret;
 }
 
 // makes the database connection
-int connectToDatabase ()
+static int database_connect (dbase_config_t *dbconfig)
 {
-    log_event log_level = config_get_log_level ();
-    // This is the buffer going to the server
-    char connectionInfo[BUFSIZ];
-    // This is the buffer going to screen.. changes the password, so its not displayed on screen
-    char debugConnectionInfo[BUFSIZ];
+    /* TODO: If enough interest, could do a switch here to connect to postgresql database server instead */
+    return connect_to_mysql (dbconfig);
+}
 
-    // sprintf(connectionInfo, "host=%s dbname=%s port=%s user=%s password=%s", dbase.host, dbase.dbname,
-    //  dbase.port, dbase.user, dbase.password);
+static int database_insert_mysql_weather_data (char *table, weather_t *data)
+{
+    char *queryString;
+    log_event log_level;
 
-    // sprintf(debugConnectionInfo, "host=%s dbname=%s port=%s user=%s password=%s", dbase.host, dbase.dbname,
-    //  dbase.port, dbase.user, "*****");
+    log_level = config_get_log_level ();
 
-    // writes the connection string information to debug
-    if (log_sort.all || log_sort.database) logger (LOG_DEBUG, log_level, "connectToDatabase", "Sending connection string:: %s", debugConnectionInfo);
-    if (log_sort.all || log_sort.database) logger (LOG_DEBUG, log_level, "connectToDatabase", "Attempting to connect to database server", NULL);
+    asprintf (&queryString,
+              "INSERT INTO %s (time, in_humidity, out_humidity, in_temperature,"
+              "out_temperature, out_dew_temperature, windchill_temperature, wind_speed"
+              ", wind_gust, wind_direction, pressure, rel_pressure, rain_last_hour"
+              ", rain_last_24h, rain_total, bytes) values (now(), %d, %d, %0.1f, %0.1f" \
+              ", '%0.1f', '%0.1f', '%0.1f', '%0.1f', '%s', '%0.1f', '%0.1f', '%0.1f','%0.1f', '%0.1f', '%s');",
+              table,
+              data->in_humidity,
+              data->out_humidity,
+              get_temperature(data->in_temp, UNIT_TYPE_IS_METRIC),
+              get_temperature(data->out_temp, UNIT_TYPE_IS_METRIC),
+              get_dew_point (data->out_temp, data->out_humidity, UNIT_TYPE_IS_METRIC),
+              get_wind_chill (data, UNIT_TYPE_IS_METRIC),
+              get_wind_speed(data->wind_speed, UNIT_TYPE_IS_METRIC),
+              get_wind_speed(data->wind_gust, UNIT_TYPE_IS_METRIC),
+              get_wind_direction (data->wind_dir, WIND_AS_TEXT),
+              get_pressure (data->abs_pressure),
+              get_pressure (data->rel_pressure),
+              get_rainfall (data->last_hour_rain_fall, UNIT_TYPE_IS_METRIC),
+              get_rainfall (data->last_24_hr_rain_fall, UNIT_TYPE_IS_METRIC),
+              get_rainfall (data->total_rain_fall, UNIT_TYPE_IS_METRIC),
+              data->readBytes);
 
-    /* init connection */
-    psql = PQconnectdb(connectionInfo);
+    logger(LOG_DEBUG, log_level, __func__, "Query String:: %s", queryString);
 
-    // Connection failed
-    if (PQstatus (psql) != CONNECTION_OK) {
-        // Connection error, put the error to error output
-        if (log_sort.all || log_sort.database) {
-            logger (LOG_DEBUG, log_level, "connectToDatabase", "libpq error: PQstatus(psql) != CONNECTION_OK", NULL);
-            logger (LOG_DEBUG, log_level, "connectToDatabase", "PSQL Error Message: '%s'", PQerrorMessage(psql));
-        }
-        exit(0);
-    } else {
-        if (log_sort.all || log_sort.database) logger (LOG_DEBUG, log_level, "connectToDatabase", "Connection made to the database", NULL);
-        // connection to the database was good, write to debug output
-        return 1;
+    if (mysql_query (&mysql, queryString) == 0)
+    {
+        logger(LOG_DEBUG, log_level, __func__, "Entered into Database ok", NULL);
     }
+    else
+    {
+        logger(LOG_DEBUG, log_level, __func__, "Command Failed:: %s", mysql_error(&mysql));
+    }
+
+    return 0;
+}
+
+static int database_insert_weather_data (char *table, weather_t *data)
+{
+    /* TODO: If enough interest, could do a switch here to insert to postgresql database server instead */
+    return database_insert_mysql_weather_data (table, data);
+}
+
+// inserts collected values into the database
+int database_insert (dbase_config_t *dbconfig, weather_t *weather)
+{
+    log_event log_level;
+
+    log_level = config_get_log_level ();
+
+    if (!weather)
+    {
+        logger (LOG_ERROR, log_level, __func__, "Weather param was NULL", NULL);
+        return -1;
+    }
+
+    if (database_connect (dbconfig) < 0)
+    {
+        logger (LOG_ERROR, log_level, __func__, "Error connecting to database", NULL);
+        return -1;
+    }
+
+    logger (LOG_DEBUG, log_level, __func__, "Connection to database successful", NULL);
+
+    logger (LOG_DEBUG, log_level, __func__, "Sending database values", NULL);
+
+    return database_insert_weather_data (dbconfig->table, weather);
 }
 
 static int check_config_value (char *name, char *value)

@@ -47,19 +47,11 @@
 // SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="1941", ATTRS{idProduct}=="8021", GROUP="plugdev", MODE="660"
 // LABEL="weather_station_end"
 
-static void putToDatabase (weather_t *weather)
+static void put_to_database (dbase_config_t *dbconfig, weather_t *weather)
 {
-    if (connectToDatabase())
+    if (database_insert (dbconfig, weather) < 0)
     {
-        logger (LOG_DEBUG, logType, "putToDatabase", "Connection to database successful", NULL);
-
-        logger (LOG_DEBUG, logType, "putToDatabase", "Sending database values", NULL);
-
-        insertIntoDatabase(weather);
-    }
-    else
-    {
-        logger (LOG_ERROR, logType, "putToDatabase", "Error connecting to database", NULL);
+        logger (LOG_ERROR, logType, __func__, "Error connecting to database", NULL);
     }
 }
 
@@ -369,9 +361,9 @@ int main (int argc, char **argv)
         else
         {
             // Put data to database
-            logger (LOG_DEBUG, logType, "Main", "Putting values to the database", NULL);
+            logger (LOG_DEBUG, log_level, __func__, "Putting values to the database", NULL);
 
-            putToDatabase(&weather);
+            put_to_database (&config.dbase_config, &weather);
         }
     }
 

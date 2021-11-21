@@ -1,6 +1,7 @@
 CC=gcc 
 
-CFLAGS = -I. -lm -lusb -lpq -I /usr/include/postgresql/ -lcurl -Werror=unused-but-set-variable -Werror=unused-parameter -Werror=unused-variable
+CFLAGS = -I. -lm -lusb -I/usr/include/mysql/ -lmysqlclient -lpq -I /usr/include/postgresql/ 
+CFLAGS += -lcurl -Werror=unused-but-set-variable -Werror=unused-parameter -Werror=unused-variable
 
 DEPS = wwsr.h config.h wwsr_usb.h logger.h weather_processing.h database.h common.h wunderground.h
 

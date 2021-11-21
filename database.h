@@ -22,11 +22,8 @@ typedef enum dbase_fields {
 	DB_FIELD_MAX,
 } dbase_fields_t;
 
-extern struct weather weather;
 
-int insertIntoDatabase ();
-int connectToDatabase ();
-
+int database_insert (dbase_config_t *dbconfig, weather_t *weather);
 int database_init (FILE *config_file, dbase_config_t *dbase_config);
 int validate_db_config (dbase_config_t *dbase_config);
 
