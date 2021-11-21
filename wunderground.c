@@ -27,6 +27,32 @@
   &baromin=%0.1f\
   &action=updateraw&softwaretype=vws"
 
+static void strip_white_space (char *string)
+{
+  int i;
+
+  char dest[BUFSIZ];
+
+  for (i = 0; string[i] != '\0'; i++)
+  {
+    // printf("char is %c\n", string[i]);
+
+    if (string[i] == ' ')
+    {
+      // printf("Replacing string");
+      dest[i++] = '%';
+      dest[i++] = '2';
+      dest[i] = '0';
+    }
+    else
+    {
+      dest[i] = string[i];
+    }
+  }
+
+  strcpy(string, dest);
+}
+
 int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 {
   CURL *curl;
@@ -65,7 +91,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 
   logger (LOG_DEBUG, log_level, __func__, "values going to WunderGround", NULL);
 
-  stripWhiteSpace (date);
+  strip_white_space (date);
 
   asprintf (&url, URL_FORMAT,
    wg_config->wgId,
@@ -122,32 +148,6 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
   }
 
   free (url);
-}
-
-void stripWhiteSpace(char *string)
-{
-  int i;
-
-  char dest[BUFSIZ];
-
-  for (i = 0; string[i] != '\0'; i++)
-  {
-    // printf("char is %c\n", string[i]);
-
-    if (string[i] == ' ')
-    {
-      // printf("Replacing string");
-      dest[i++] = '%';
-      dest[i++] = '2';
-      dest[i] = '0';
-    }
-    else
-    {
-      dest[i] = string[i];
-    }
-  }
-
-  strcpy(string, dest);
 }
 
 /* the function to invoke as the data recieved */
