@@ -6,10 +6,10 @@
 typedef struct dbase_config {
 	char *user;
 	char *dbname;
-	char *table;      
-	char *port;
+	char *table;
+	unsigned int port;
 	char *host;
-	char *password;  
+	char *password;
 } dbase_config_t;
 
 typedef enum dbase_fields {

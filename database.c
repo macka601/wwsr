@@ -139,7 +139,11 @@ int validate_db_config (dbase_config_t *dbase_config)
             break;
 
         case DB_PORT:
-            RETURN_IF_ERROR (check_config_value ("port", dbase_config->port));
+            if (dbase_config->port == 0)
+            {
+                logger (LOG_ERROR, config_get_log_level (), __func__, "Config file is missing option %s", "port");
+                ret = -1;
+            }
             break;
 
         case DB_HOST:
@@ -209,7 +213,7 @@ int database_init (FILE *config_file, dbase_config_t *dbase_config)
 
             if (strstr (line, "port"))
             {
-                i > 0 ? database_copy_config_value (_buffer, &dbase_config->port, "port") : NULL;
+                i > 0 ? dbase_config->port = strtol (_buffer, NULL, 10) : 0;
             }
 
             if (strstr (line, "dbuser"))

@@ -95,6 +95,8 @@ int config_get_options (int argc, char **argv, config_t *config)
     int ret = 0;
     FILE *file_handle;
 
+    memset(config, 0, sizeof(config_t));
+
     while ((option = getopt (argc, argv, "daupvxhwi?")) != -1 && !config->print_to_screen)
     {
         // Change the ? to an h
