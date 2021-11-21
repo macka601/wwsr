@@ -53,6 +53,15 @@ static void strip_white_space (char *string)
   strcpy(string, dest);
 }
 
+/* the function to invoke as the data recieved */
+static size_t write_callback_func (void *buffer, size_t size, size_t nmemb, void *userp)
+{
+  char **response_ptr =  (char**) userp;
+
+  /* assuming the response is a string */
+  *response_ptr = strndup (buffer, (size_t)(size *nmemb));
+}
+
 int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 {
   CURL *curl;
@@ -149,16 +158,6 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 
   free (url);
 }
-
-/* the function to invoke as the data recieved */
-size_t static write_callback_func(void *buffer, size_t size, size_t nmemb, void *userp)
-{
-  char **response_ptr =  (char**)userp;
-
-  /* assuming the response is a string */
-  *response_ptr = strndup(buffer, (size_t)(size * nmemb));
-}
-
 
 static int check_config_value (char *name, char *value)
 {
