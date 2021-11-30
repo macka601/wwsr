@@ -234,8 +234,11 @@ float get_rainfall (uint16_t byte, bool unit_type)
 {
    float total;
 
-   // Bucket size is 0.3mm per tip
-   total = byte * 0.2965;
+   /* Bucket size is 0.3mm per tip
+    * To get a better accuracy i've looked at screen vs
+    * readings, 0.2966 seems to be as close as i can get it
+    */
+   total = byte * 0.2966;
 
    // check if returning in imperial units
    if (unit_type == UNIT_TYPE_IS_IMPERIAL)
