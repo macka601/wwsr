@@ -12,7 +12,8 @@
 #include "weather_processing.h"
 #include "wwsr.h"
 
-#define URL_FORMAT "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?\
+#define URL_FORMAT                                                             \
+   "http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?\
   ID=%s\
   &PASSWORD=%s\
   &dateutc=%s\
@@ -27,213 +28,255 @@
   &baromin=%0.1f\
   &action=updateraw&softwaretype=vws"
 
-static void strip_white_space (char *string)
+static void strip_white_space (char * string)
 {
-  int i;
+   int i;
 
-  char dest[BUFSIZ];
+   char dest[BUFSIZ];
 
-  for (i = 0; string[i] != '\0'; i++)
-  {
-    // printf("char is %c\n", string[i]);
+   for (i = 0; string[i] != '\0'; i++)
+   {
+      // printf("char is %c\n", string[i]);
 
-    if (string[i] == ' ')
-    {
-      // printf("Replacing string");
-      dest[i++] = '%';
-      dest[i++] = '2';
-      dest[i] = '0';
-    }
-    else
-    {
-      dest[i] = string[i];
-    }
-  }
+      if (string[i] == ' ')
+      {
+         // printf("Replacing string");
+         dest[i++] = '%';
+         dest[i++] = '2';
+         dest[i] = '0';
+      }
+      else
+      {
+         dest[i] = string[i];
+      }
+   }
 
-  strcpy(string, dest);
+   strcpy (string, dest);
 }
 
 /* the function to invoke as the data recieved */
-static size_t write_callback_func (void *buffer, size_t size, size_t nmemb, void *userp)
+static size_t write_callback_func (
+   void * buffer,
+   size_t size,
+   size_t nmemb,
+   void * userp)
 {
-  char **response_ptr =  (char**) userp;
+   char ** response_ptr = (char **)userp;
 
-  /* assuming the response is a string */
-  *response_ptr = strndup (buffer, (size_t)(size *nmemb));
+   /* assuming the response is a string */
+   *response_ptr = strndup (buffer, (size_t) (size * nmemb));
 }
 
-int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
+int send_to_wunderground (wunderground_config_t * wg_config, weather_t * w)
 {
-  CURL *curl;
-  CURLcode res;
+   CURL * curl;
+   CURLcode res;
 
-  float out_temp;
-  float dew_point;
-  float wind_speed;
-  float wind_gust;
-  float pressure;
-  float last_hour_rain_fall;
-  float last_24_hr_rain_fall;
+   float out_temp;
+   float dew_point;
+   float wind_speed;
+   float wind_gust;
+   float pressure;
+   float last_hour_rain_fall;
+   float last_24_hr_rain_fall;
 
-  char *url;
-  char date[BUFSIZ];
+   char * url;
+   char date[BUFSIZ];
 
-  // convert all the values
-  out_temp = get_temperature (w->out_temp, UNIT_TYPE_IS_IMPERIAL);
+   // convert all the values
+   out_temp = get_temperature (w->out_temp, UNIT_TYPE_IS_IMPERIAL);
 
-  dew_point = get_dew_point (w->out_temp, w->out_humidity, UNIT_TYPE_IS_IMPERIAL);
+   dew_point =
+      get_dew_point (w->out_temp, w->out_humidity, UNIT_TYPE_IS_IMPERIAL);
 
-  wind_speed = get_wind_speed (w->wind_speed, UNIT_TYPE_IS_IMPERIAL);
+   wind_speed = get_wind_speed (w->wind_speed, UNIT_TYPE_IS_IMPERIAL);
 
-  wind_gust = get_wind_speed (w->wind_gust, UNIT_TYPE_IS_IMPERIAL);
+   wind_gust = get_wind_speed (w->wind_gust, UNIT_TYPE_IS_IMPERIAL);
 
-  pressure = w->rel_pressure * 0.02953553;
+   pressure = w->rel_pressure * 0.02953553;
 
-  last_hour_rain_fall = w->last_hour_rain_fall * 0.03937;
+   last_hour_rain_fall = w->last_hour_rain_fall * 0.03937;
 
-  last_24_hr_rain_fall = w->last_24_hr_rain_fall * 0.03937;
+   last_24_hr_rain_fall = w->last_24_hr_rain_fall * 0.03937;
 
-  wwsr_get_time (date, sizeof(date));
+   wwsr_get_time (date, sizeof (date));
 
-  logger (LOG_INFO, __func__, "values going to WunderGround", NULL);
+   logger (LOG_INFO, __func__, "values going to WunderGround", NULL);
 
-  strip_white_space (date);
+   strip_white_space (date);
 
-  asprintf (&url, URL_FORMAT,
-   wg_config->wgId,
-   wg_config->wgPassword,
-   date,
-   get_wind_direction(w->wind_dir, WIND_AS_DEGREES),
-   wind_speed,
-   wind_gust,
-   out_temp,
-   last_hour_rain_fall,
-   w->out_humidity,
-   dew_point,
-   last_24_hr_rain_fall,
-   pressure
-  );
+   asprintf (
+      &url,
+      URL_FORMAT,
+      wg_config->wgId,
+      wg_config->wgPassword,
+      date,
+      get_wind_direction (w->wind_dir, WIND_AS_DEGREES),
+      wind_speed,
+      wind_gust,
+      out_temp,
+      last_hour_rain_fall,
+      w->out_humidity,
+      dew_point,
+      last_24_hr_rain_fall,
+      pressure);
 
-  logger (LOG_INFO, __func__, "URL sent:: %s", url);
+   logger (LOG_INFO, __func__, "URL sent:: %s", url);
 
-  // setup curl
-  curl = curl_easy_init();
+   // setup curl
+   curl = curl_easy_init();
 
-  if (curl)
-  {
-    /* to keep the response */
-    char *response = NULL;
+   if (curl)
+   {
+      /* to keep the response */
+      char * response = NULL;
 
-    //curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
-    curl_easy_setopt (curl, CURLOPT_URL, url);
+      // curl_easy_setopt(curl, CURLOPT_URL, "http://example.com");
+      curl_easy_setopt (curl, CURLOPT_URL, url);
 
-    /* setting a callback function to return the data */
-    curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_callback_func);
+      /* setting a callback function to return the data */
+      curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, write_callback_func);
 
-    /* passing the pointer to the response as the callback parameter */
-    curl_easy_setopt (curl, CURLOPT_WRITEDATA, &response);
+      /* passing the pointer to the response as the callback parameter */
+      curl_easy_setopt (curl, CURLOPT_WRITEDATA, &response);
 
-    /* Perform the request, res will get the return code */
-    res = curl_easy_perform (curl);
+      /* Perform the request, res will get the return code */
+      res = curl_easy_perform (curl);
 
-    printf ("Results sent to wunderground:: %s", response);
+      printf ("Results sent to wunderground:: %s", response);
 
-    /* Check for errors */
-    if (response != "success")
-    {
-      logger (LOG_ERROR, __func__, "Command Failed:: %s", curl_easy_strerror (res));
-      logger (LOG_ERROR, __func__, "URL sent:: %s", url);
-    }
-    else
-    {
-      logger (LOG_DEBUG, __func__, "Command state:: %s", response);
-    }
-
-    /* always cleanup */
-    curl_easy_cleanup (curl);
-  }
-
-  free (url);
-}
-
-static int check_config_value (char *name, char *value)
-{
-  char *secret = "******";
-
-  if (value == NULL)
-  {
-    logger (LOG_ERROR, __func__, "Config file is missing option %s", name);
-    return -1;
-  }
-
-  logger (LOG_DEBUG, __func__, "Config file key %s = %s", name,
-          strcmp ("wgPassword", name) == 0 ? secret : value);
-
-  return 0;
-}
-
-static int validate_config (wunderground_config_t *wg_config)
-{
-  logger (LOG_DEBUG, __func__, "Validating configuration options from config file", NULL);
-
-  RETURN_IF_ERROR (check_config_value ("wgUserName", wg_config->wgUserName));
-
-  RETURN_IF_ERROR (check_config_value ("wgPassword", wg_config->wgPassword));
-
-  RETURN_IF_ERROR (check_config_value ("wgId", wg_config->wgId));
-
-  return 0;
-}
-
-static void wunderground_copy_config_value (char *src, char **dest, char *name)
-{
-  char *secret = "******";
-
-  if (asprintf (dest, "%s", src))
-  {
-    logger(LOG_DEBUG, __func__, "Found %s=`%s`", name, strcmp("wgPassword", name) == 0 ? secret : src);
-  }
-}
-
-int wunderground_init (FILE *config_file, wunderground_config_t *wg_config)
-{
-  char _buffer[BUFSIZ];
-  char line[BUFSIZ];
-  int ret = 0;
-  int i;
-
-  logger(LOG_DEBUG, __func__, "Looking for wundeground config options");
-
-  // Get a line from the configuration file
-  while (fgets (line, sizeof(line), config_file) != NULL)
-  {
-    logger (LOG_DEBUG, __func__, "Checking for parameters line #", rtrim (line));
-
-    // Detect if there is a comment present
-    if (line[0] != '#')
-    {
-      i = config_get_next_line (line, &_buffer[0]);
-
-      if (strstr (line, "wgUserName"))
+      /* Check for errors */
+      if (response != "success")
       {
-        i > 0 ? wunderground_copy_config_value (_buffer, &wg_config->wgUserName, "wgUserName") : NULL;
+         logger (
+            LOG_ERROR,
+            __func__,
+            "Command Failed:: %s",
+            curl_easy_strerror (res));
+         logger (LOG_ERROR, __func__, "URL sent:: %s", url);
+      }
+      else
+      {
+         logger (LOG_DEBUG, __func__, "Command state:: %s", response);
       }
 
-      if (strstr (line, "wgPassword"))
+      /* always cleanup */
+      curl_easy_cleanup (curl);
+   }
+
+   free (url);
+}
+
+static int check_config_value (char * name, char * value)
+{
+   char * secret = "******";
+
+   if (value == NULL)
+   {
+      logger (LOG_ERROR, __func__, "Config file is missing option %s", name);
+      return -1;
+   }
+
+   logger (
+      LOG_DEBUG,
+      __func__,
+      "Config file key %s = %s",
+      name,
+      strcmp ("wgPassword", name) == 0 ? secret : value);
+
+   return 0;
+}
+
+static int validate_config (wunderground_config_t * wg_config)
+{
+   logger (
+      LOG_DEBUG,
+      __func__,
+      "Validating configuration options from config file",
+      NULL);
+
+   RETURN_IF_ERROR (check_config_value ("wgUserName", wg_config->wgUserName));
+
+   RETURN_IF_ERROR (check_config_value ("wgPassword", wg_config->wgPassword));
+
+   RETURN_IF_ERROR (check_config_value ("wgId", wg_config->wgId));
+
+   return 0;
+}
+
+static void wunderground_copy_config_value (
+   char * src,
+   char ** dest,
+   char * name)
+{
+   char * secret = "******";
+
+   if (asprintf (dest, "%s", src))
+   {
+      logger (
+         LOG_DEBUG,
+         __func__,
+         "Found %s=`%s`",
+         name,
+         strcmp ("wgPassword", name) == 0 ? secret : src);
+   }
+}
+
+int wunderground_init (FILE * config_file, wunderground_config_t * wg_config)
+{
+   char _buffer[BUFSIZ];
+   char line[BUFSIZ];
+   int ret = 0;
+   int i;
+
+   logger (LOG_DEBUG, __func__, "Looking for wundeground config options");
+
+   // Get a line from the configuration file
+   while (fgets (line, sizeof (line), config_file) != NULL)
+   {
+      logger (
+         LOG_DEBUG,
+         __func__,
+         "Checking for parameters line #",
+         rtrim (line));
+
+      // Detect if there is a comment present
+      if (line[0] != '#')
       {
-        i > 0 ? wunderground_copy_config_value (_buffer, &wg_config->wgPassword, "wgPassword") : NULL;
+         i = config_get_next_line (line, &_buffer[0]);
+
+         if (strstr (line, "wgUserName"))
+         {
+            i > 0 ? wunderground_copy_config_value (
+                       _buffer,
+                       &wg_config->wgUserName,
+                       "wgUserName")
+                  : NULL;
+         }
+
+         if (strstr (line, "wgPassword"))
+         {
+            i > 0 ? wunderground_copy_config_value (
+                       _buffer,
+                       &wg_config->wgPassword,
+                       "wgPassword")
+                  : NULL;
+         }
+
+         if (strstr (line, "wgId"))
+         {
+            i > 0 ? wunderground_copy_config_value (
+                       _buffer,
+                       &wg_config->wgId,
+                       "wgId")
+                  : NULL;
+         }
       }
+      // Clear our buffer for next time around
+      memset (_buffer, 0, sizeof (_buffer));
+   }
 
-      if (strstr (line, "wgId"))
-      {
-        i > 0 ? wunderground_copy_config_value (_buffer, &wg_config->wgId, "wgId") : NULL;
-      }
-    }
-    // Clear our buffer for next time around
-    memset (_buffer, 0, sizeof(_buffer));
-  }
+   ret = validate_config (wg_config);
 
-  ret = validate_config (wg_config);
-
-  return ret;
+   return ret;
 }
