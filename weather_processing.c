@@ -122,10 +122,8 @@ float get_pressure (uint16_t byte)
 
 static uint8_t check_humidity (uint8_t humidity)
 {
-  log_event log_level = config_get_log_level ();
-
   if (humidity > 0x64) {
-    logger (LOG_ERROR, log_level, __func__, "humidity greater than 100%");
+    logger (LOG_ERROR, __func__, "humidity greater than 100%");
     humidity = 0x64;
   }
 
@@ -171,11 +169,8 @@ float get_wind_chill (weather_t *weather, bool unit_type)
   float windChill;
   float temperature;
   float windSpeed;
-  log_event log_level;
 
-  log_level = config_get_log_level ();
-
-  logger (LOG_DEBUG, log_level, __func__, "Units will be in %s", unit_type == UNIT_TYPE_IS_METRIC ? "Metric" : "Imperial");
+  logger (LOG_DEBUG, __func__, "Units will be in %s", unit_type == UNIT_TYPE_IS_METRIC ? "Metric" : "Imperial");
 
   temperature = get_temperature (weather->out_temp, UNIT_TYPE_IS_METRIC);
 
@@ -184,7 +179,7 @@ float get_wind_chill (weather_t *weather, bool unit_type)
   // check for which formula to use
   if (temperature < 11 && windSpeed > 4)
   {
-    logger (LOG_DEBUG, log_level, __func__, "Using Wind Chill Temperature forumla", NULL);
+    logger (LOG_DEBUG, __func__, "Using Wind Chill Temperature forumla", NULL);
     // this formula only works for temps less than 10 deg, and a min windspeed of 5km/h
     windChill = 13.12 + 0.6215 * temperature - 11.37 * pow(windSpeed, 0.16)
                 + 0.3965 * temperature * pow(windSpeed, 0.16);
@@ -192,7 +187,7 @@ float get_wind_chill (weather_t *weather, bool unit_type)
   else
   {
     // Use Apparent temperature
-    logger (LOG_DEBUG, log_level, __func__, "Using Apparent Temperature forumla", NULL);
+    logger (LOG_DEBUG, __func__, "Using Apparent Temperature forumla", NULL);
 
     // Version including the effects of temperature, humidity, and wind:
     // AT = Ta + 0.33×e − 0.70×ws − 4.00
@@ -202,11 +197,11 @@ float get_wind_chill (weather_t *weather, bool unit_type)
 
     e = (weather->out_humidity / 100.0) * 6.105 * exp(17.27 * temperature / (237.7 + temperature));
 
-    logger (LOG_DEBUG, log_level, __func__, "e value is %f", e);
+    logger (LOG_DEBUG, __func__, "e value is %f", e);
 
     windChill = round(temperature + 0.33 * e - 0.7 * (windSpeed / 3.6) - 4.00);
 
-    logger (LOG_DEBUG, log_level, __func__, "Apparent Temperature is %f", windChill);
+    logger (LOG_DEBUG, __func__, "Apparent Temperature is %f", windChill);
 
   }
 
@@ -245,14 +240,10 @@ float get_rainfall(uint16_t byte, bool unit_type)
 
 void process_data (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr, uint8_t *buffer24Hr)
 {
-  log_event log_level;
-
-  log_level = config_get_log_level ();
-
   // Get the last stored value time
   sprintf (weather->last_read, "%d", bufferCurrent[LAST_READ_BYTE]);
 
-  logger (LOG_DEBUG, log_level, __func__, "Processing Data", NULL);
+  logger (LOG_DEBUG, __func__, "Processing Data", NULL);
 
   weather->out_temp = convert_temperature (bufferCurrent[OUTSIDE_TEMP_HIGH_BYTE], bufferCurrent[OUTSIDE_TEMP_LOW_BYTE]);
 
@@ -279,5 +270,5 @@ void process_data (weather_t *weather, int8_t *bufferCurrent, uint8_t *buffer1Hr
 
   weather->last_24_hr_rain_fall = process_rainfall_diff (weather->total_rain_fall, buffer24Hr);
 
-  logger (LOG_DEBUG, log_level, "ProcessData", "processed %d results", sizeof(weather));
+  logger (LOG_DEBUG, __func__, "processed %d results", sizeof(weather));
 }

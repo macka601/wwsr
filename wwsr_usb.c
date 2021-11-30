@@ -19,20 +19,17 @@ int wwsr_usb_open (void)
 {
     // Will return 1 if the usb was successfully opened
     int state = 0;
-
-    log_event log_level = config_get_log_level ();
-
     struct usb_bus *bus;
 
     if (device_handle != NULL)
     {
-        logger (LOG_ERROR, log_level, __func__, "Device already opened, please close first");
+        logger (LOG_ERROR, __func__, "Device already opened, please close first");
         return -1;
     }
 
     device_handle = NULL;
 
-    logger (LOG_USB, log_level, __func__, "Initialise usb");
+    logger (LOG_USB, __func__, "Initialise usb");
 
     usb_init ();
 
@@ -42,7 +39,7 @@ int wwsr_usb_open (void)
 
     usb_find_devices ();
 
-    logger (LOG_USB, log_level, __func__, "Scan for device %04X:%04X", VENDOR_ID, PRODUCT_ID);
+    logger (LOG_USB, __func__, "Scan for device %04X:%04X", VENDOR_ID, PRODUCT_ID);
 
     for (bus = usb_get_busses (); bus && device_handle == NULL; bus = bus->next)
     {
@@ -52,7 +49,7 @@ int wwsr_usb_open (void)
         {
             if (device->descriptor.idVendor == VENDOR_ID && device->descriptor.idProduct == PRODUCT_ID)
             {
-                logger (LOG_USB, log_level, __func__, "Found device %04X:%04X", VENDOR_ID, PRODUCT_ID);
+                logger (LOG_USB, __func__, "Found device %04X:%04X", VENDOR_ID, PRODUCT_ID);
                 device_handle = usb_open (device);
             }
         }
@@ -64,36 +61,36 @@ int wwsr_usb_open (void)
         switch (usb_get_driver_np (device_handle, 0, buf, sizeof(buf)))
         {
         case 0:
-            logger (LOG_USB, log_level, __func__, "Interface 0 already claimed by driver \"%s\", attempting to detach it", buf);
+            logger (LOG_USB, __func__, "Interface 0 already claimed by driver \"%s\", attempting to detach it", buf);
             state = usb_detach_kernel_driver_np (device_handle, 0);
         }
 
         if (state == 0)
         {
             // Claimed the device from the system, set up the file handler
-            logger (LOG_USB, log_level, __func__, "Claimed device from system");
+            logger (LOG_USB, __func__, "Claimed device from system");
             state = usb_claim_interface(device_handle, 0);
         }
 
         if (state == 0)
         {
-            logger (LOG_USB, log_level, __func__, "Set alt interface");
+            logger (LOG_USB, __func__, "Set alt interface");
             state = usb_set_altinterface(device_handle, 0);
         }
     }
     else
     {
-        logger (LOG_ERROR, log_level, __func__, "Device %04X:%04X not found", VENDOR_ID, PRODUCT_ID);
+        logger (LOG_ERROR, __func__, "Device %04X:%04X not found", VENDOR_ID, PRODUCT_ID);
         state = 1;
     }
 
     if (state == 0)
     {
-        logger (LOG_USB, log_level, __func__, "Device %04X:%04X opened, code:%d", VENDOR_ID, PRODUCT_ID, state);
+        logger (LOG_USB, __func__, "Device %04X:%04X opened, code:%d", VENDOR_ID, PRODUCT_ID, state);
     }
     else
     {
-        logger (LOG_ERROR, log_level, __func__, "Device %04X:%04X: could not open, code:%d", VENDOR_ID, PRODUCT_ID, state);
+        logger (LOG_ERROR, __func__, "Device %04X:%04X: could not open, code:%d", VENDOR_ID, PRODUCT_ID, state);
     }
 
     return state;
@@ -102,21 +99,20 @@ int wwsr_usb_open (void)
 int wwsr_usb_close (void)
 {
     int state;
-    log_event log_level = config_get_log_level ();
 
     if (device_handle)
     {
         state = usb_release_interface (device_handle, 0);
         if (state != 0) {
-            logger (LOG_ERROR, log_level, __func__, "Could not release interface, code:%d", state);
+            logger (LOG_USB, __func__, "Could not release interface, code:%d", state);
         }
 
         state = usb_close (device_handle);
         if (state != 0) {
-            logger (LOG_ERROR, log_level, __func__, "Error closing interface, code:%d", state);
+            logger (LOG_ERROR, __func__, "Error closing interface, code:%d", state);
         }
     }
-    logger (LOG_USB, log_level, __func__, "Closing interface, state is:%d", state);
+    logger (LOG_USB, __func__, "Closing interface, state is:%d", state);
     return state;
 }
 
@@ -130,12 +126,10 @@ int wwsr_usb_read_value (uint16_t address, uint16_t *data)
     char tmp[32];
     int usb_tx_buf_size = sizeof (tmp);
 
-    log_event log_level = config_get_log_level ();
-
     memset (data, 0, sizeof (data));
 
     // Send debug message
-    logger (LOG_USB, log_level, __func__, "Send read command: Addr=0x%04X Size=%u", address, sizeof(data));
+    logger (LOG_USB, __func__, "Send read command: Addr=0x%04X Size=%u", address, sizeof(data));
 
     // Format the command
     sprintf (cmd, "\xA1%c%c%c\xA1%c%c%c", address >> 8, address, usb_tx_buf_size, address >> 8, address, usb_tx_buf_size);
@@ -144,13 +138,13 @@ int wwsr_usb_read_value (uint16_t address, uint16_t *data)
     state = usb_control_msg (device_handle, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x0000009, 0x0000200, 0, cmd, sizeof(cmd) - 1, 1000);
 
     // Send debug message if enabled
-    logger (LOG_USB, log_level, __func__, "Sent %d of %d bytes", state, sizeof(cmd) - 1);
+    logger (LOG_DEBUG, __func__, "Sent %d of %d bytes", state, sizeof(cmd) - 1);
 
     // initiate a read request to the device
     state = usb_interrupt_read (device_handle, 0x00000081, tmp, usb_tx_buf_size, 1000);
 
     // Send debug message if enable
-    logger (LOG_USB, log_level, __func__, "Read %d of %d bytes", state, usb_tx_buf_size);
+    logger (LOG_DEBUG, __func__, "Read %d of %d bytes", state, usb_tx_buf_size);
 
     memcpy (data, tmp, sizeof(tmp));
 
@@ -160,7 +154,6 @@ int wwsr_usb_read (uint16_t address, uint8_t *data, uint16_t size)
 {
     // Initiliaze local values
     uint16_t i, c;
-    log_event log_level = config_get_log_level ();
 
     // Set the state to 0
     int state = 0;
@@ -172,7 +165,7 @@ int wwsr_usb_read (uint16_t address, uint8_t *data, uint16_t size)
     memset (data, 0, size);
 
     // Send debug message if enabled
-    logger (LOG_USB, log_level, __func__, "Reading %d bytes from 0x%04X", size, address);
+    logger (LOG_DEBUG, __func__, "Reading %d bytes from 0x%04X", size, address);
 
     // set i to 0
     i = 0;
@@ -193,7 +186,7 @@ int wwsr_usb_read (uint16_t address, uint8_t *data, uint16_t size)
         a = address + i;
 
         // Send debug message
-        logger (LOG_USB, log_level, __func__, "Send read command: Addr=0x%04X Size=%u", a, s);
+        logger (LOG_DEBUG, __func__, "Send read command: Addr=0x%04X Size=%u", a, s);
 
         // Format the command
         sprintf (cmd, "\xA1%c%c%c\xA1%c%c%c", a >> 8, a, c, a >> 8, a, c);
@@ -202,13 +195,13 @@ int wwsr_usb_read (uint16_t address, uint8_t *data, uint16_t size)
         state = usb_control_msg (device_handle, USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x0000009, 0x0000200, 0, cmd, sizeof (cmd) - 1, 1000);
 
         // Send debug message if enabled
-        logger (LOG_USB, log_level, __func__, "Sent %d of %d bytes", state, sizeof(cmd) - 1);
+        logger (LOG_DEBUG, __func__, "Sent %d of %d bytes", state, sizeof(cmd) - 1);
 
         // initiate a read request to the device
         state = usb_interrupt_read (device_handle, 0x00000081, tmp, c, 1000);
 
         // Send debug message if enable
-        logger (LOG_USB, log_level, __func__, "Read %d of %d bytes", state, c);
+        logger (LOG_DEBUG, __func__, "Read %d of %d bytes", state, c);
 
         // Copy the data to tmp
         memcpy (data + i, tmp, s);

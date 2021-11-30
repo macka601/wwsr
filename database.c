@@ -27,25 +27,22 @@ MYSQL  mysql;
 //     // Connection failed
 //     if (PQstatus (psql) != CONNECTION_OK) {
 //         // Connection error, put the error to error output
-//         logger (LOG_DEBUG, log_level, __func__, "libpq error: PQstatus(psql) != CONNECTION_OK", NULL);
-//         logger (LOG_DEBUG, log_level, __func__, "PSQL Error Message: '%s'", PQerrorMessage(psql));
+//         logger (LOG_ERROR, __func__, "libpq error: PQstatus(psql) != CONNECTION_OK", NULL);
+//         logger (LOG_ERROR, __func__, "PSQL Error Message: '%s'", PQerrorMessage(psql));
 //         return -1;
 //     }
 //     else
 //     {
-//         logger (LOG_DEBUG, log_level, __func__, "Connection made to the database", NULL);
+//         logger (LOG_DBASE, __func__, "Connection made to the database", NULL);
 //         return 0;
 //     }
 // }
 
 // static int database_insert_postsql_weather_data (char *table, weather_t *data)
 // {
-//     log_event log_level;
 //     PGresult *dbResult;
 //     int ret;
-
-//     log_level = config_get_log_level ();
-
+//
 //     asprintf (&queryString,
 //               "INSERT INTO %s (time, in_humidity, out_humidity, in_temperature,"
 //               "out_temperature, out_dew_temperature, windchill_temperature, wind_speed"
@@ -74,11 +71,11 @@ MYSQL  mysql;
 //    // If the command was successful
 //    if (PQresultStatus (dbResult) == PGRES_COMMAND_OK )
 //    {
-//        logger (LOG_DEBUG, log_level, __func__, "Entered into Database ok", NULL);
+//        logger (LOG_DBASE, __func__, "Entered into Database ok", NULL);
 //    }
 //    else
 //    {
-//        logger (LOG_DEBUG, log_level, __func__, "Command Failed:: %s", PQerrorMessage(psql));
+//        logger (LOG_ERROR, __func__, "Command Failed:: %s", PQerrorMessage(psql));
 //        ret = -1;
 //    }
 //    free (queryString);
@@ -88,34 +85,31 @@ MYSQL  mysql;
 
 static int connect_to_mysql (dbase_config_t *dbconfig)
 {
-    log_event log_level;
     char *debug_con_string; // For debugging only, does not contain password
     int ret;
-
-    log_level = config_get_log_level ();
 
     // Do a separate buffer for screen output that does not contain the password
     asprintf (&debug_con_string, "host=%s dbname=%s port=%d user=%s password=%s", dbconfig->host, dbconfig->dbname,
               dbconfig->port, dbconfig->user, "******");
 
-    logger (LOG_DEBUG, log_level, __func__, "Sending connection string:: %s", debug_con_string);
-    logger (LOG_DEBUG, log_level, __func__, "Attempting to connect to database server", NULL);
+    logger (LOG_DBASE, __func__, "Sending connection string:: %s", debug_con_string);
+    logger (LOG_DBASE, __func__, "Attempting to connect to database server", NULL);
 
     if (mysql_init (&mysql) == NULL)
     {
-        logger (LOG_DEBUG, log_level, __func__, "Couldn't initialise mysql handle");
+        logger (LOG_ERROR, __func__, "Couldn't initialise mysql handle");
         ret = -1;
     }
     else
     {
         if (!mysql_real_connect (&mysql, dbconfig->host, dbconfig->user, dbconfig->password, dbconfig->dbname, dbconfig->port, NULL, 0))
         {
-            logger (LOG_DEBUG, log_level, __func__, "Couldn't connect to mysql");
+            logger (LOG_ERROR, __func__, "Couldn't connect to mysql");
             ret = -1;
         }
         else
         {
-            logger (LOG_DEBUG, log_level, __func__, "Connection made to the database", NULL);
+            logger (LOG_DBASE, __func__, "Connection made to the database", NULL);
         }
     }
 
@@ -134,9 +128,6 @@ static int database_connect (dbase_config_t *dbconfig)
 static int database_insert_mysql_weather_data (char *table, weather_t *data)
 {
     char *queryString;
-    log_event log_level;
-
-    log_level = config_get_log_level ();
 
     asprintf (&queryString,
               "INSERT INTO %s (time, in_humidity, out_humidity, in_temperature,"
@@ -161,15 +152,15 @@ static int database_insert_mysql_weather_data (char *table, weather_t *data)
               get_rainfall (data->total_rain_fall, UNIT_TYPE_IS_METRIC),
               data->readBytes);
 
-    logger(LOG_DEBUG, log_level, __func__, "Query String:: %s", queryString);
+    logger(LOG_DEBUG, __func__, "Query String:: %s", queryString);
 
     if (mysql_query (&mysql, queryString) == 0)
     {
-        logger(LOG_DEBUG, log_level, __func__, "Entered into Database ok", NULL);
+        logger(LOG_INFO, __func__, "Entered into Database ok", NULL);
     }
     else
     {
-        logger(LOG_DEBUG, log_level, __func__, "Command Failed:: %s", mysql_error(&mysql));
+        logger(LOG_ERROR, __func__, "Command Failed:: %s", mysql_error(&mysql));
     }
 
     return 0;
@@ -184,25 +175,21 @@ static int database_insert_weather_data (char *table, weather_t *data)
 // inserts collected values into the database
 int database_insert (dbase_config_t *dbconfig, weather_t *weather)
 {
-    log_event log_level;
-
-    log_level = config_get_log_level ();
-
     if (!weather)
     {
-        logger (LOG_ERROR, log_level, __func__, "Weather param was NULL", NULL);
+        logger (LOG_ERROR, __func__, "Weather param was NULL", NULL);
         return -1;
     }
 
     if (database_connect (dbconfig) < 0)
     {
-        logger (LOG_ERROR, log_level, __func__, "Error connecting to database", NULL);
+        logger (LOG_ERROR, __func__, "Error connecting to database", NULL);
         return -1;
     }
 
-    logger (LOG_DEBUG, log_level, __func__, "Connection to database successful", NULL);
+    logger (LOG_DBASE, __func__, "Connection to database successful", NULL);
 
-    logger (LOG_DEBUG, log_level, __func__, "Sending database values", NULL);
+    logger (LOG_DBASE, __func__, "Sending database values", NULL);
 
     return database_insert_weather_data (dbconfig->table, weather);
 }
@@ -210,14 +197,13 @@ int database_insert (dbase_config_t *dbconfig, weather_t *weather)
 static int check_config_value (char *name, char *value)
 {
     char *secret = "******";
-    log_event log_level = config_get_log_level ();
     if (value == NULL)
     {
-        logger (LOG_ERROR, log_level, __func__, "Config file is missing option %s", name);
+        logger (LOG_ERROR, __func__, "Config file is missing option %s", name);
         return -1;
     }
 
-    logger (LOG_INFO, log_level, __func__, "Config file key %s = %s", name,
+    logger (LOG_DEBUG, __func__, "Config file key %s = %s", name,
             strcmp("password", name) == 0 ? secret : value);
 
     return 0;
@@ -228,7 +214,7 @@ int validate_db_config (dbase_config_t *dbase_config)
     dbase_fields_t field = DB_USER;
     int ret = 0;
 
-    logger (LOG_INFO, config_get_log_level (), __func__, "Validating configuration options from config file", NULL);
+    logger (LOG_DEBUG, __func__, "Validating configuration options from config file", NULL);
 
     while (field < DB_FIELD_MAX && ret >= 0)
     {
@@ -249,7 +235,7 @@ int validate_db_config (dbase_config_t *dbase_config)
         case DB_PORT:
             if (dbase_config->port == 0)
             {
-                logger (LOG_ERROR, config_get_log_level (), __func__, "Config file is missing option %s", "port");
+                logger (LOG_ERROR, __func__, "Config file is missing option %s", "port");
                 ret = -1;
             }
             break;
@@ -272,12 +258,11 @@ int validate_db_config (dbase_config_t *dbase_config)
 
 static void database_copy_config_value (char *src, char **dest, char *name)
 {
-    log_event log_level = config_get_log_level();
     char *secret = "******";
 
     if (asprintf (dest, "%s", src))
     {
-        logger (LOG_DEBUG, log_level, __func__, "Found %s=`%s`", name, strcmp ("password", name) == 0 ? secret : src);
+        logger (LOG_DEBUG, __func__, "Found %s=`%s`", name, strcmp ("password", name) == 0 ? secret : src);
     }
 }
 
@@ -288,14 +273,12 @@ int database_init (FILE *config_file, dbase_config_t *dbase_config)
     int ret;
     char line[BUFSIZ];
 
-    log_event log_level = config_get_log_level ();
-
-    logger (LOG_DEBUG, log_level, __func__, "Looking for database options");
+    logger (LOG_DEBUG, __func__, "Looking for database options");
 
     // Get a line from the configuration file
     while (fgets (line, sizeof(line), config_file) != NULL)
     {
-        logger (LOG_DEBUG, log_level, __func__, "Checking for parameters line #", rtrim (line));
+        logger (LOG_DEBUG, __func__, "Checking for parameters line #", rtrim (line));
 
         // Detect if there is a comment present
         if (line[0] != '#')

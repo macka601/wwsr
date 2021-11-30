@@ -49,13 +49,9 @@
 
 static void put_to_database (dbase_config_t *dbconfig, weather_t *weather)
 {
-    log_event log_level;
-
-    log_level = config_get_log_level ();
-
     if (database_insert (dbconfig, weather) < 0)
     {
-        logger (LOG_ERROR, log_level, __func__, "Error connecting to database", NULL);
+        logger (LOG_ERROR, __func__, "Error connecting to database", NULL);
     }
 }
 
@@ -210,14 +206,11 @@ static int hex2dec (int hexByte)
 int main (int argc, char **argv)
 {
     config_t config;
-    log_sort.usb = 0;
-    log_sort.all = 0;
-    log_sort.database = 0;
+    logs_enabled_t logs_enabled;
     int ret;
-    log_event log_level;
     char *buf = NULL;
     int i;
-    
+
     weather_t weather;
 
     struct {
@@ -229,23 +222,23 @@ int main (int argc, char **argv)
 
     ret = config_get_options (argc, argv, &config);
 
+    logs_enabled = config_get_enabled_logs ();
+
     if (ret == NO_OPTIONS_SELECTED)
     {
         exit(1);
     }
 
-    log_level = config_get_log_level ();
-
-    logger (LOG_DEBUG, log_level, __func__, "Attempting to Opening the USB", NULL);
+    logger (LOG_USB, __func__, "Attempting to Opening the USB", NULL);
 
     // if the usbStatus is 0 - it returned opened
     if (wwsr_usb_open () != 0)
     {
-        logger (LOG_DEBUG, log_level, __func__, "Usb Failed to open", NULL);
+        logger (LOG_ERROR, __func__, "Usb Failed to open", NULL);
     }
     else
     {
-        logger (LOG_USB, log_level, __func__, "Usb opened successfully, retrieving data", NULL);
+        logger (LOG_USB, __func__, "Usb opened successfully, retrieving data", NULL);
 
         // initialise address positions
         // current address in device, new address and new address -1h and - 24h (for rainfall computation)
@@ -275,24 +268,24 @@ int main (int argc, char **argv)
         wwsr_usb_read_value (WS_STORED_READINGS, &current.num_of_stored_readings);
 
         // Get the current time from the device
-        logger (LOG_DEBUG, log_level, __func__, "Getting Weather Stations Time", NULL);
+        logger (LOG_INFO, __func__, "Getting Weather Stations Time", NULL);
 
         wwsr_usb_read (WS_TIME_DATE, &current.last_store_time[0], sizeof(current.last_store_time));
 
         asprintf (&buf, "Weather Station's last memory store time: %02X:%02X ", current.last_store_time[HOURS], current.last_store_time[MINUTES]);
 
-        logger (LOG_DEBUG, log_level, __func__, buf, NULL);
+        logger (LOG_BYTES, __func__, buf, NULL);
 
         // divide the current time stamp by the amount of 5 min intervals that could have occurred
         current.five_min_periods = hex2dec (current.last_store_time[MINUTES]) / 5;
 
         asprintf (&buf, "Number of 5 min periods so far this hour = %d", current.five_min_periods);
 
-        logger (LOG_DEBUG, log_level, __func__, buf, NULL);
+        logger (LOG_BYTES, __func__, buf, NULL);
 
         asprintf (&buf, "1hr pointer will be 0x%04X", current.entry_address - ((current.five_min_periods + 5) * 16));
 
-        logger (LOG_DEBUG, log_level, __func__, buf, NULL);
+        logger (LOG_BYTES, __func__, buf, NULL);
 
         // current address
         current_base_ptr = current.entry_address;
@@ -332,9 +325,7 @@ int main (int argc, char **argv)
             weather.bytePtr += sprintf (weather.bytePtr, "%02X", _CurrentBuffer[i]);
         }
 
-        // weather.bytePtr += sprintf (weather.bytePtr, '\0');
-
-        if (config.log_type.bytes || log_level == LOG_DEBUG)
+        if ((logs_enabled & LOG_BYTES) == LOG_BYTES)
         {
             printf ("byteString to go into database = %s\n", weather.readBytes);
 
@@ -361,7 +352,7 @@ int main (int argc, char **argv)
         else
         {
             // Put data to database
-            logger (LOG_DEBUG, log_level, __func__, "Putting values to the database", NULL);
+            logger (LOG_DBASE, __func__, "Putting values to the database", NULL);
 
             put_to_database (&config.dbase_config, &weather);
         }
@@ -369,7 +360,7 @@ int main (int argc, char **argv)
 
     wwsr_usb_close ();
 
-    logger (LOG_DEBUG, log_level, __func__, "Closing the USB", NULL);
+    logger (LOG_USB, __func__, "Closing the USB", NULL);
 
 }
 

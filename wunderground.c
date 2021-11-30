@@ -67,9 +67,6 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
   CURL *curl;
   CURLcode res;
 
-  log_event log_level;
-  log_level = config_get_log_level ();
-
   float out_temp;
   float dew_point;
   float wind_speed;
@@ -98,7 +95,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 
   wwsr_get_time (date, sizeof(date));
 
-  logger (LOG_DEBUG, log_level, __func__, "values going to WunderGround", NULL);
+  logger (LOG_INFO, __func__, "values going to WunderGround", NULL);
 
   strip_white_space (date);
 
@@ -117,7 +114,7 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
    pressure
   );
 
-  logger (LOG_DEBUG, log_level, __func__, "URL sent:: %s", url);
+  logger (LOG_INFO, __func__, "URL sent:: %s", url);
 
   // setup curl
   curl = curl_easy_init();
@@ -144,12 +141,12 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
     /* Check for errors */
     if (response != "success")
     {
-      logger (LOG_DEBUG, log_level, __func__, "Command Failed:: %s", curl_easy_strerror (res));
-      logger (LOG_DEBUG, log_level, __func__, "URL sent:: %s", url);
+      logger (LOG_ERROR, __func__, "Command Failed:: %s", curl_easy_strerror (res));
+      logger (LOG_ERROR, __func__, "URL sent:: %s", url);
     }
     else
     {
-      logger (LOG_DEBUG, log_level, __func__, "Command state:: %s", response);
+      logger (LOG_DEBUG, __func__, "Command state:: %s", response);
     }
 
     /* always cleanup */
@@ -162,14 +159,14 @@ int send_to_wunderground(wunderground_config_t *wg_config, weather_t *w)
 static int check_config_value (char *name, char *value)
 {
   char *secret = "******";
-  log_event log_level = config_get_log_level ();
+
   if (value == NULL)
   {
-    logger (LOG_ERROR, log_level, __func__, "Config file is missing option %s", name);
+    logger (LOG_ERROR, __func__, "Config file is missing option %s", name);
     return -1;
   }
 
-  logger (LOG_INFO, log_level, __func__, "Config file key %s = %s", name,
+  logger (LOG_DEBUG, __func__, "Config file key %s = %s", name,
           strcmp ("wgPassword", name) == 0 ? secret : value);
 
   return 0;
@@ -177,7 +174,7 @@ static int check_config_value (char *name, char *value)
 
 static int validate_config (wunderground_config_t *wg_config)
 {
-  logger (LOG_INFO, config_get_log_level (), __func__, "Validating configuration options from config file", NULL);
+  logger (LOG_DEBUG, __func__, "Validating configuration options from config file", NULL);
 
   RETURN_IF_ERROR (check_config_value ("wgUserName", wg_config->wgUserName));
 
@@ -190,12 +187,11 @@ static int validate_config (wunderground_config_t *wg_config)
 
 static void wunderground_copy_config_value (char *src, char **dest, char *name)
 {
-  log_event log_level = config_get_log_level ();
   char *secret = "******";
 
   if (asprintf (dest, "%s", src))
   {
-    logger(LOG_DEBUG, log_level, __func__, "Found %s=`%s`", name, strcmp("wgPassword", name) == 0 ? secret : src);
+    logger(LOG_DEBUG, __func__, "Found %s=`%s`", name, strcmp("wgPassword", name) == 0 ? secret : src);
   }
 }
 
@@ -205,14 +201,13 @@ int wunderground_init (FILE *config_file, wunderground_config_t *wg_config)
   char line[BUFSIZ];
   int ret = 0;
   int i;
-  log_event log_level = config_get_log_level ();
 
-  logger(LOG_DEBUG, log_level, __func__, "Looking for wundeground config options");
+  logger(LOG_DEBUG, __func__, "Looking for wundeground config options");
 
   // Get a line from the configuration file
   while (fgets (line, sizeof(line), config_file) != NULL)
   {
-    logger (LOG_DEBUG, log_level, __func__, "Checking for parameters line #", rtrim (line));
+    logger (LOG_DEBUG, __func__, "Checking for parameters line #", rtrim (line));
 
     // Detect if there is a comment present
     if (line[0] != '#')

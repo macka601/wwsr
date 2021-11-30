@@ -4,61 +4,52 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "logger.h"
+#include "config.h"
 
-void logger (log_event event, log_event logType, const char *function, char *msg, ...)
+void logger (log_type_t log_type, const char *function, char *msg, ...)
 {
     va_list args;
-
     va_start (args, msg);
+    logs_enabled_t logs;
 
-    switch (event)
+    logs = config_get_enabled_logs ();
+
+    // Special case, where we don't set this as an enabled log type
+    if ((log_type & LOG_ERROR) == LOG_ERROR)
     {
-    case LOG_DEBUG:
-        if (logType == LOG_DEBUG)
+        fprintf (stdout, "error: wwsr.%s - ", function);
+    }
+    else
+    {
+        switch (log_type & logs)
         {
-            fprintf (stdout , "message: wwsr.%s - ", function);
-            vfprintf (stdout, msg, args);
-            fprintf (stdout, "\n");
-        }
-        break;
+            case LOG_USB:
+                fprintf (stdout, "usb: wwsr.%s - ", function);
+            break;
 
-    case LOG_USB:
-        if (logType == LOG_USB || logType == LOG_DEBUG)
-        {
-            fprintf (stdout, "usb: wwsr.%s - ", function);
-            vfprintf (stdout, msg, args);
-            fprintf (stdout, "\n");
-        }
-        break;
+            case LOG_DBASE:
+                fprintf (stdout, "database: wwsr.%s - ", function);
+            break;
 
-    case LOG_WARNING:
-        if (logType == LOG_WARNING)
-        {
-            fprintf (stdout, "warning: wwsr.%s - ", function);
-            vfprintf (stdout, msg, args);
-            fprintf (stdout, "\n");
-        }
-        break;
+            case LOG_BYTES:
+                fprintf (stdout, "bytes: wwsr.%s - ", function);
+            break;
 
-    case LOG_ERROR:
-        if (logType == LOG_ERROR || logType == LOG_DEBUG)
-        {
-            fprintf (stdout, "error: wwsr.%s - ", function);
-            vfprintf (stdout, msg, args);
-            fprintf (stdout, "\n");
-        }
-        break;
+            case LOG_INFO:
+                fprintf (stdout, "info: wwsr.%s - ", function);
+            break;
 
-    case LOG_INFO:
-        if (logType == LOG_INFO || logType == LOG_DEBUG)
-        {
-            fprintf (stdout, "info: wwsr.%s - ", function);
-            vfprintf (stdout, msg, args);
-            fprintf (stdout, "\n");
+            case LOG_DEBUG:
+                fprintf (stdout, "debug: wwsr.%s - ", function);
+            break;
+            case LOG_NONE:
+            default:
+                return;
+            break;
         }
-        break;
-
     }
 
+    vfprintf (stdout, msg, args);
+    fprintf (stdout, "\n");
     va_end (args);
 }

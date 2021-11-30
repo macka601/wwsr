@@ -15,7 +15,7 @@
 
 // Hard code the file name for the config file
 static char fileName[] = "config";
-static int log_level = LOG_ERROR;
+static logs_enabled_t logs_enabled = 0;
 
 int config_get_next_line (char *line, char *value)
 {
@@ -61,11 +61,11 @@ static void copy_config_value (char *src, char **dest, char *name)
         /* Treat the password a little differently */
         if (strcmp ("password", name) == 0)
         {
-            logger (LOG_DEBUG, log_level, __func__, "Found %s=`*****`", name);
+            logger (LOG_DEBUG, __func__, "Found %s=`*****`", name);
         }
         else
         {
-            logger (LOG_DEBUG, log_level, __func__, "Found %s=`%s`", name, src);
+            logger (LOG_DEBUG, __func__, "Found %s=`%s`", name, src);
         }
 
     }
@@ -81,7 +81,7 @@ static FILE * open_config_file (char *filename)
     if (!config_file_handle)
     {
         // Spit an error
-        logger (LOG_ERROR, log_level, __func__, "Error opening config file", NULL);
+        logger (LOG_ERROR, __func__, "Error opening config file", NULL);
 
         return NULL;
     }
@@ -110,52 +110,39 @@ int config_get_options (int argc, char **argv, config_t *config)
         {
         case 'n':
             // User requested no log output
-            log_level = LOG_NONE;
+            logs_enabled = LOG_NONE;
             break;
-        // Turn on database debugging
         case 'd':
-            //redirecting the log output of _log_debug to the standard output
-            // config->log_level = LOG_DEBUG;
-            config->log_type.database = 1;
+            logs_enabled |= LOG_DBASE;
             // inform user that we are redirecting output
-            logger (LOG_INFO, LOG_DEBUG, __func__, "database debugging Enabled", NULL);
+            logger (LOG_DBASE, __func__, "database debugging Enabled", NULL);
             break;
-
-        // Prints values, but doesn't put them to database
         case 'p':
             printf ("Showing the current values from the weather station\n");
             config->print_to_screen = 1;
             // Disable this option
             config->send_to_wunderground = 0;
             break;
-
-        // All debug information on
         case 'a':
-            log_level = LOG_DEBUG;
-            config->log_type.all = 1;
-            logger (LOG_DEBUG, log_level, __func__, "debug flag ON", NULL);
+            logs_enabled = (LOG_DEBUG | LOG_INFO | LOG_BYTES | LOG_DBASE | LOG_USB);
+            logger (LOG_DEBUG, __func__, "debug flag ON", NULL);
             break;
-
         case 'x':
-            config->log_type.bytes = 1;
-            logger (LOG_DEBUG, LOG_DEBUG, __func__, "debug bytes flag ON", NULL);
+            logs_enabled |= LOG_BYTES;
+            logger (LOG_BYTES, __func__, "debug bytes flag ON", NULL);
             break;
-
         case 'w':
             if (!config->print_to_screen)
             {
                 config->send_to_wunderground = 1;
             }
             break;
-
         case 'i':
             config->show_as_imperial = 1;
             break;
-
         case 'u':
-            log_level = LOG_USB;
-            config->log_type.usb = 1;
-            logger (LOG_DEBUG, LOG_USB, __func__, "USB debug flag ON", NULL);
+            logs_enabled |= LOG_USB;
+            logger (LOG_USB, __func__, "USB debug flag ON", NULL);
             break;
 
         // Print the options to the user
@@ -184,7 +171,7 @@ int config_get_options (int argc, char **argv, config_t *config)
         file_handle = open_config_file (fileName);
         if (!file_handle)
         {
-            logger (LOG_ERROR, log_level, __func__, "Error opening the config file", NULL);
+            logger (LOG_ERROR, __func__, "Error opening the config file", NULL);
             return -1;
         }
 
@@ -216,7 +203,7 @@ int config_get_options (int argc, char **argv, config_t *config)
     return ret;
 }
 
-int config_get_log_level (void)
+logs_enabled_t config_get_enabled_logs (void)
 {
-    return log_level;
+    return logs_enabled;
 }
