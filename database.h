@@ -1,23 +1,31 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-struct databaseAccessValues {
-	char user[BUFSIZ];
-	char dbname[BUFSIZ];
-	char table[BUFSIZ];      
-	char port[BUFSIZ];
-	char host[BUFSIZ];
-	char password[BUFSIZ];  
-	char wgUserName[BUFSIZ];
-	char wgPassword[BUFSIZ];
-	char wgId[BUFSIZ];
-} dbase;
+#include "common.h"
 
-extern struct weather weather;
+typedef struct dbase_config
+{
+   char * user;
+   char * dbname;
+   char * table;
+   unsigned int port;
+   char * host;
+   char * password;
+} dbase_config_t;
 
-int insertIntoDatabase(struct weather*);
-int connectToDatabase();
-void openConfigFile();
+typedef enum dbase_fields
+{
+   DB_USER = 0,
+   DB_NAME,
+   DB_TABLE,
+   DB_PORT,
+   DB_HOST,
+   DB_PASSWORD,
+   DB_FIELD_MAX,
+} dbase_fields_t;
 
-extern int logType;
+int database_insert (dbase_config_t * dbconfig, weather_t * weather);
+int database_init (FILE * config_file, dbase_config_t * dbase_config);
+int validate_db_config (dbase_config_t * dbase_config);
+
 #endif /* End of header guard */
