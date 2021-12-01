@@ -20,6 +20,7 @@ do apt-get install libusb-dev libpq-dev libcurl4-gnutls-dev to get these
 Unpack the files to a directory of your choice, then run the make file.
 
 ```make```
+
 ```./wwsr -h``` to show options
 
 ## Usage
