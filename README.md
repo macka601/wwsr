@@ -19,6 +19,9 @@ do apt-get install libusb-dev libpq-dev libcurl4-gnutls-dev to get these
 ## Installing the program
 Unpack the files to a directory of your choice, then run the make file.
 
+```make```
+```./wwsr -h``` to show options
+
 ## Usage
 The device might get claimed by the kernel, add the following udev rule so that we can access it without being root. 
 Add in /etc/udev/rules.d/<rule_name>
