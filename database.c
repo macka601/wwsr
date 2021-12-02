@@ -41,7 +41,7 @@ MYSQL mysql;
 // *data)
 // {
 //     PGresult *dbResult;
-//     int ret;
+//     int ret = 0;
 //
 //     asprintf (&queryString,
 //               "INSERT INTO %s (time, in_humidity, out_humidity,
@@ -87,7 +87,7 @@ MYSQL mysql;
 static int connect_to_mysql (dbase_config_t * dbconfig)
 {
    char * debug_con_string; // For debugging only, does not contain password
-   int ret;
+   int ret = 0;
 
    // Do a separate buffer for screen output that does not contain the password
    asprintf (
